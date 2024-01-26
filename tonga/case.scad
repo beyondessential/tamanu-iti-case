@@ -75,6 +75,7 @@ module branding() {
 		text("tamanu", size = 16, font="BetecknaLowerCase:style=Medium");
 	}
 	
+	// TODO: slant this vertically to avoid colours being disjoint
 	translate([0, overall_length*way_down])
 	cube([overall_width, 1.3, lid_height]);
 }
