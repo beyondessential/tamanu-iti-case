@@ -2,7 +2,7 @@ $fn = 36;
 
 width = 25.4;
 length = 25.4;
-total_height = 37; // to fit just under lid
+total_height = 34; // to fit just under lid
 
 hole_d = 2.5;
 hole_to_side = 1.3;
@@ -28,7 +28,7 @@ uppermost_tip = gps_bottom_of_board + board_thick + tip_above_gps_board;
 
 base_height = total_height - assembly_height;
 
-fixing_dome_d = 6.1;
+fixing_dome_d = 6.5;
 
 module pin(tip, base) {
 	union() {
@@ -42,7 +42,7 @@ difference() {
 	translate([width/2, length/2]) sphere(d = fixing_dome_d);
 	
 	// hole for temp sensor
-	translate([width/2, length/3, base_height]) sphere(d = fixing_dome_d);
+	translate([width/2, 0.42*length, base_height]) sphere(d = fixing_dome_d);
 }
 
 translate([d_mount_base/2, d_mount_base/2, base_height]) {
