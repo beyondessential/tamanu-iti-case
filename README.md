@@ -19,6 +19,8 @@ This was used for the Tonga Village Mission Clinic trial.
   - [Lid](./tonga/renders/case-tonga-2L.stl)
   - [Text inlay for lid](./tonga/renders/case-tonga-2T.stl)
 
+![Photo of the 3D printed and fully assembled case](./tonga/renders/case-tonga-2.jpg)
+
 ## Prototype trials
 
 These didn't go anywhere.
