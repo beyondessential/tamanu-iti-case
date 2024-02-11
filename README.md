@@ -34,17 +34,19 @@ Meant to fit on top of the official case (replacing the "lid").
 - [Version 4 STL](./proto-0/renders/case-proto-4.stl) and [text inlay](./proto-0/renders/case-proto-4T.stl)
 - [Version 5 STL](./proto-0/renders/case-proto-5.stl) and [text inlay](./proto-0/renders/case-proto-5T.stl)
 
-# Component Cubes
+# E-ink screen
 
-A concept added to Tonga v2, this is a holder for loose components inside the case.
-Components are mounted vertically stacked on top of a cube-like shape which has a void in the shape of a half sphere on the bottom, about 6.5mm diameter.
-This fits a corresponding "mounting dome" in the case, preventing sideways movement.
-The Component Cube is designed such that the top of the component stack fits _just_ under the lid, so that it can't move upwards (and therefore is stuck in all directions) when the lid is closed.
+2.13" WeAct Epaper module
 
-## Temperature+Humidity+GPS
+## SPI [pinout](https://pinout.xyz/pinout/spi)
 
-- [Temperature+Humidity AHT20 StemmaQT breakout board by Adafruit](https://www.adafruit.com/product/4566)
-- [Mini GPS PA1010D StemmaQT breakout board by Adafruit](https://www.adafruit.com/product/4415)
-- [Model (OpenSCAD code)](./cube-temp-hum-gps.scad)
-- [Render for printing (STL)](./cube-temp-hum-gps.stl)
-- [Printing settings (Bambu Lab A1 mini)](./cube-temp-hum-gps.3mf)
+| SPI Name | Pin | Wire colour            | Pin | RPi Name  |
+|----------|-----|------------------------|-----|-----------|
+| BUSY     | 1   | :black_circle: black   | 16  | GPIO 23   |
+| RES      | 2   | :orange_circle: orange | 18  | GPIO 24   |
+| D/C      | 3   | :white_circle: white   | 22  | GPIO 25   |
+| CS       | 4   | 🔵 blue                | 24  | SPI0 CE0  |
+| SCL      | 5   | :green_circle: green   | 23  | SPI0 SCLK |
+| SDA      | 6   | :yellow_circle: yellow | 19  | SPI0 MOSI |
+| GND      | 7   | :black_circle: black   | 20  | Ground    |
+| VCC      | 8   | :red_circle: red       | 17  | 3v3 Power |
