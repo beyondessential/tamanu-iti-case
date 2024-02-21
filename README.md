@@ -42,7 +42,7 @@ Meant to fit on top of the official case (replacing the "lid").
 
 | SPI Name | Pin | Wire colour            | Pin | RPi Name  |
 |----------|-----|------------------------|-----|-----------|
-| BUSY     | 1   | :black_circle: black   | 16  | GPIO 23   |
+| BUSY     | 1   | :purple_circle: purple   | 16  | GPIO 23   |
 | RES      | 2   | :orange_circle: orange | 18  | GPIO 24   |
 | D/C      | 3   | :white_circle: white   | 22  | GPIO 25   |
 | CS       | 4   | 🔵 blue                | 24  | SPI0 CE0  |
