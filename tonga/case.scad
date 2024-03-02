@@ -248,7 +248,7 @@ difference() {
 		rj_height = 14.5;
 		rj_offset = 10.2 + offset_correction;
 		south_of_rj = rpi_south_of_board + (rj_offset - rj_width/2) - 0.5;
-		translate([overall_length, south_of_rj, cutouts_bottom])
+		translate([overall_width, south_of_rj, cutouts_bottom])
 		rotate([0, -90, 0])
 		translate([rj_height, 0, 0])
 		rotate([0, 0, 90])
@@ -259,7 +259,7 @@ difference() {
 		usb_a_height = 17;
 		usb_a1_offset = 29.1 + offset_correction;
 		south_of_usb_a1 = rpi_south_of_board + (usb_a1_offset - usb_a_width/2) - 0.5;
-		translate([overall_length, south_of_usb_a1, cutouts_bottom])
+		translate([overall_width, south_of_usb_a1, cutouts_bottom])
 		rotate([0, -90, 0])
 		translate([usb_a_height, 0, 0])
 		rotate([0, 0, 90])
@@ -268,7 +268,7 @@ difference() {
 		
 		usb_a2_offset = 47 + offset_correction;
 		south_of_usb_a2 = rpi_south_of_board + (usb_a2_offset - usb_a_width/2) - 0.5;
-		translate([overall_length, south_of_usb_a2, cutouts_bottom])
+		translate([overall_width, south_of_usb_a2, cutouts_bottom])
 		rotate([0, -90, 0])
 		translate([usb_a_height, 0, 0])
 		rotate([0, 0, 90])
@@ -288,13 +288,13 @@ difference() {
 		air_bottom1 = 4*overall_height/7;
 		
 		for (air_offset1 = [air_offset_start : air_width + air_offset_gap : air_offset_end ])
-		translate([air_offset1, overall_width, air_bottom1])
+		translate([air_offset1, overall_length, air_bottom1])
 		rotate([90, 0, 0])
 		linear_extrude(cutouts_thick)
 		rounded_rect(air_width, air_height, 0.5);
 
 		for (air_offset2 = [air_offset_start - (air_offset_gap + air_width)/2 : air_width + air_offset_gap : air_offset_end + (air_offset_gap + air_width)/2 ])
-		translate([air_offset2, overall_width, air_bottom2])
+		translate([air_offset2, overall_length, air_bottom2])
 		rotate([90, 0, 0])
 		linear_extrude(cutouts_thick)
 		rounded_rect(air_width, air_height, 0.5);
