@@ -154,6 +154,14 @@ rpi_hole_offset_south = 3.5;
 rpi_hole_offset_north = rpi_length - 3.5;
 rpi_hole_d = 2.75;
 
+top_cutout_depth = 0.2;
+module top_cutouts() {
+	translate([overall_width*.75, overall_length*.3])
+	rotate([0, 0, -90])
+	linear_extrude(top_cutout_depth)
+	import("tamanu_logo.svg", center = true);
+}
+
 module bottom_cutouts() {
 	screw_head_d = 7;
 	screw_head_h = 0.8;
@@ -384,6 +392,7 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 		outer_casing();
 
 		bottom_cutouts();
+		translate([0, 0, overall_height - top_cutout_depth + 0.01]) top_cutouts();
 		translate([0, wall*2]) south_cutouts();
 		translate([0, overall_length + wall*2]) north_cutouts();
 		translate([wall, 0]) left_cutouts();
