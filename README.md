@@ -1,10 +1,28 @@
 # Tamanu Iti cases
 
+## v2 full case
+
+Full 3D printed case.
+Embeds a UPS.
+Changes the assembly orientation to slot the boards in tight.
+Secured with a screw.
+
+This is the current production version.
+
+- [Model (OpenSCAD code)](./v2/case.scad)
+- [Main body](./v2/renders/main-body.stl)
+  - [Light pipes](./v2/renders/light-pipes.stl)
+  - [Text inlay](./v2/renders/right-text-inlay.stl)
+- [Lid](./v2/renders/lid.stl)
+
+<!-- ![Photo of the 3D printed and fully assembled case](./v2/renders/assembled.jpg) -->
+
 ## Tonga full case
 
 Full 3D printed case.
 Square footprint with plenty of internal space for componentry.
 Tall enough to accommodate the HatDrive Top.
+Friction closed with hot glue for a "seal".
 
 This was used for the Tonga Village Mission Clinic trial.
 

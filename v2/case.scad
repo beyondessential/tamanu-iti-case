@@ -445,11 +445,11 @@ union() {
 		]) cube([
 			bottom_lip_h,
 			rpi_hole_d + tie_sides*2,
-			overall_width - rpi_hole_offset_right + rpi_hole_d/2 + tie_sides,
+			overall_width - rpi_hole_offset_right + rpi_hole_d/2 + tie_sides - wall*2,
 		]);
-		
-		#rotate([0, -90]) translate([
-			wall + overall_width - rpi_hole_offset_right,
+
+		rotate([0, -90]) translate([
+			overall_width - rpi_hole_offset_right - wall,
 			rpi_south_of_board + rpi_hole_offset_north,
 			-wall*2
 		]) cylinder(d = rpi_hole_d, h = wall);
