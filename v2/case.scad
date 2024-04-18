@@ -100,7 +100,7 @@ module right_branding() {
 }
 
 module rtc_holder() {
-	rtc_height = 3;
+	rtc_height = 2.7;
 	rtc_d = 25;
 	rtc_wall = 1;
 	
@@ -142,7 +142,7 @@ module outer_casing() {
 
 		rtc_offset_y = 10;
 		rtc_overall_x = 27.5;
-		rtc_offset_x = 10;
+		rtc_offset_x = 25;
 		translate([wall, rpi_length + rtc_offset_y, rtc_overall_x + rtc_offset_x])
 		rtc_holder();
 	}
@@ -200,48 +200,76 @@ module north_cutouts() {
 module south_cutouts() {
 	usb_c_width = 10;
 	usb_c_height = 4.8;
+
+	dip = 2;
+	usb_c_dip_width = 13;
+	usb_c_dip_height = 8;
+	usb_c_dip_r = 3;
+
 	usb_c_offset = 11.2;
 	left_of_usb_c = rpi_left_of_board + (usb_c_offset - usb_c_width/2);
 	translate([left_of_usb_c, 0, cutouts_bottom])
-	rotate([90, 0, 0])
-	linear_extrude(cutouts_thick)
-	rounded_rect(usb_c_width, usb_c_height, cutouts_radius);
+	rotate([90, 0, 0]) {
+		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_width, usb_c_height, cutouts_radius);
+
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			wall*2 - dip
+		])
+		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+	}
 
 	hdmi_width = 8.2;
 	hdmi_height = 4.8;
-	hdmi1_offset = 25.8;
-	left_of_hdmi1 = rpi_left_of_board + (hdmi1_offset - hdmi_width/2);
-	translate([left_of_hdmi1, 0, cutouts_bottom])
-	rotate([90, 0, 0])
-	linear_extrude(cutouts_thick)
-	rounded_rect(hdmi_width, hdmi_height, cutouts_radius);
+	hdmi_dip_width = 12;
+	hdmi_dip_height = 8;
+	hdmi_dip_r = 3;
+	
+	for (hdmi_offset = [25.8, 39.2]) {
+		left_of_hdmi = rpi_left_of_board + (hdmi_offset - hdmi_width/2);
+		translate([left_of_hdmi, 0, cutouts_bottom])
+		rotate([90, 0, 0]) {
+			linear_extrude(cutouts_thick)
+			rounded_rect(hdmi_width, hdmi_height, cutouts_radius);
+			
+			translate([
+				(hdmi_width - hdmi_dip_width)/2,
+				(hdmi_height - hdmi_dip_height)/2,
+				wall*2 - dip
+			])
+			linear_extrude(cutouts_thick)
+			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
+		}
+	}
 
-	hdmi2_offset = 39.2;
-	left_of_hdmi2 = rpi_left_of_board + (hdmi2_offset - hdmi_width/2);
-	translate([left_of_hdmi2, 0, cutouts_bottom])
-	rotate([90, 0, 0])
-	linear_extrude(cutouts_thick)
-	rounded_rect(hdmi_width, hdmi_height, cutouts_radius);
-
-	usb_power_width = 10;
-	usb_power_height = 4.8;
 	usb_power_offset = 52;
 	usb_power_bottom = ground_to_ups + pcb_thick - 1;
-	left_of_usb_power = rpi_left_of_board + (usb_power_offset - usb_power_width/2);
-	translate([left_of_usb_power, 0, usb_power_bottom + usb_power_height/2])
+	left_of_usb_power = rpi_left_of_board + (usb_power_offset - usb_c_width/2);
+	translate([left_of_usb_power, 0, usb_power_bottom + usb_c_height/2])
 	rotate([90, 0, 0]) {
 		linear_extrude(cutouts_thick)
-		rounded_rect(usb_power_width, usb_power_height, cutouts_radius);
-		
+		rounded_rect(usb_c_width, usb_c_height, cutouts_radius);
+
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			wall*2 - dip
+		])
+		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+
 		label_h = 0.6;
 		label_x_offset = 0;
-		label_z_offset = 3;
+		label_z_offset = 5;
 		translate([
-			usb_power_width/2 + label_x_offset,
-			usb_power_height + label_z_offset,
+			usb_c_width/2 + label_x_offset,
+			usb_c_height + label_z_offset,
 			wall*2 - label_h
 		])	linear_extrude(label_h + 0.01)
-			text("⚡", size = 8, font = "Symbola", halign = "center");
+			text("⚡", size = 7, font = "Symbola", halign = "center");
 	}
 
 	air_offset_start = overall_width*0.1 + wall;
@@ -308,8 +336,8 @@ module left_cutouts() {
 
 	x1201_button_v_offset = -1;
 	x1201_button_h_offset = 95.7;
-	x1201_button_bottom_d = 4.5;
-	x1201_button_top_d = 4.0;
+	x1201_button_bottom_d = 4.6;
+	x1201_button_top_d = 4.2;
 	south_of_x1201_button = rpi_south_of_board + x1201_button_h_offset;
 	translate([0, south_of_x1201_button, cutouts_bottom + x1201_button_v_offset])
 	rotate([0, -90, 0])
