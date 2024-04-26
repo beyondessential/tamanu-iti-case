@@ -16,7 +16,6 @@ pcb_thick = 1.6;
 
 $fn = 36;
 
-radius = 6;
 outer = 68.70;
 shelf = 1.2;
 ridge = 1;
@@ -34,7 +33,7 @@ gpio_y = 12;
 inner_width = 85.5;
 inner_length = 107.4 + rpi_hangs_south;
 
-outer_radius = 4;
+outer_radius = 2;
 lid_dip = 5;
 lid_tolerance = 0; // may need to be negative for materials with more flex
 wall = 2.5;
@@ -311,10 +310,10 @@ module left_leds() {
 		62.5, // pi5
 		67.5, // 5v0
 		
-		75.5, // bat4
-		79.7, // bat3
-		83.8, // bat2
-		88.0, // bat1
+		//75.5, // bat4
+		//79.7, // bat3
+		//83.8, // bat2
+		//88.0, // bat1
 	];
 	for (x1201_led_h_offset = x1201_led_h_offsets) {
 		south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
@@ -322,6 +321,12 @@ module left_leds() {
 		rotate([0, -90, 0])
 		cylinder(h = wall, d = led_d);
 	}
+	
+	// battery
+	bat_start = 75.5 - led_d/2;
+	bat_end = 88.0 + led_d/2;
+	translate([-wall, rpi_south_of_board + bat_start, cutouts_bottom + x1201_led_v_offset - led_d/4])
+	cube([wall, bat_end - bat_start, led_d/2]);
 }
 
 module left_cutouts() {
@@ -413,7 +418,7 @@ module right_cutouts() {
 translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
 
 // main-body
-translate([0, 0, overall_width]) rotate([0, 90, 0]) {
+!translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	// main body
 	color("white")
 	difference() {
