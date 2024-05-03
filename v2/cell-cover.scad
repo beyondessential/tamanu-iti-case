@@ -4,7 +4,7 @@ board_depth = 85;
 
 // https://industrial.panasonic.com/ww/products/pt/lithium-ion/models/NCR18650BD
 cell_diameter = 18.5;
-cell_depth = 65.3 + 0.2;
+cell_depth = 65.3 + 0.7;
 cell_rounding = 1.2;
 cell_spacing = 0.5;
 
@@ -17,7 +17,7 @@ module cells() {
 corners = 1;
 
 overcase_up = 4.1;
-overcase_dl = 6;
+overcase_dl = 5.5;
 overcase_dw = 2;
 
 overhead_up = 2;
@@ -140,15 +140,15 @@ union() {
 
 		// pocket for rtc battery
 		pocket_wall = 5;
-		pocket_x = 22;
-		pocket_y = max(35, overall_y - pocket_wall);
+		pocket_x = max(32, overall_x/2 - pocket_wall);
+		pocket_y = max(22, overall_y/2);
 		pocket_z = 3;
-		up(pocket_z/2) left(overall_x/4) back(pocket_wall/2+0.01)
+		up(pocket_z-corners/2) right(-pocket_x/2+0.01)
 		cuboid([
 			pocket_x,
 			pocket_y,
 			pocket_z,
-		], rounding=corners, except=[BACK]);
+		], rounding=corners, except=[RIGHT]);
 	}
 
 	// linkage for corners-chamfers
@@ -163,7 +163,7 @@ union() {
 	// screen holder panel
 	panel_bot = 20;
 	panel_top = left_top;
-	panel_thk = 5;
+	panel_thk = 7;
 	up(-(panel_bot + panel_top)/2 + panel_top)
 	right(overall_x/2+panel_thk/2)
 	difference() {
@@ -182,7 +182,7 @@ union() {
 
 		// cutout for screen bits
 		xcopies(0.01)
-		up(2.5) back(3)
+		up(1.4) back(3.4)
 		xflip() left(panel_thk/2) screen_back();
 	}
 }
