@@ -1,3 +1,4 @@
+include <BOSL2/std.scad>;
 include <../vendor/RaspberryPi5.scad>;
 
 // width  = along x axis
@@ -58,7 +59,7 @@ rpi_lift = ground_to_ups + pcb_thick + ups_standoffs + extra_lift;
 
 x1001_nominal_height = 7.7; // from bottom of x1001 to top of power port
 x1001_to_ssd_top = 6.85;
-ssd_heatsink_height = 0; // no heatsink in v2.0
+ssd_heatsink_height = 4.6;
 x1001_height = max(x1001_nominal_height, x1001_to_ssd_top + ssd_heatsink_height);
 
 x1001_standoffs = 16.75; // from top of rpi board to bottom of x1001 board
@@ -71,6 +72,9 @@ inner_height = assembly_height + breathing_room;
 
 overall_height = inner_height + wall * 2;
 echo(assembly_height=assembly_height, inner_height=inner_height, overall_height=overall_height);
+
+// 44mm == 1U
+assert(overall_height <= 44);
 
 module rounded_rect(width, height, corner_r) {
 	minkowski() {
@@ -98,52 +102,21 @@ module right_branding() {
 	}
 }
 
-module rtc_holder() {
-	rtc_height = 2.7;
-	rtc_d = 25;
-	rtc_wall = 1;
-	
-	translate([rtc_height + rtc_wall, rtc_d, 0])
-	rotate([90, 0, 0]) rotate([0, 0, 90]) {
-		// tray
-		linear_extrude(rtc_d) {
-			intersection() {
-				square(rtc_height + rtc_wall);
-				difference() {
-					translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height + rtc_wall);
-					translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height);
-				}
-			}
-			translate([rtc_height, 0]) square([rtc_d - rtc_height, rtc_wall]);
-		}
-
-		// wall
-		translate([0, 0, 0]) linear_extrude(rtc_wall) {
-			intersection() {
-				square(rtc_height + rtc_wall);
-				translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height + rtc_wall);
-			}
-			translate([rtc_height, 0]) square([rtc_d - rtc_height, rtc_height + rtc_wall]);
-		}
-	}
-}
-
 module outer_casing() {
-	translate([0, 0, overall_height]) rotate([0, 90, 0])
-	{
-		difference() {
-			linear_extrude(inner_width + wall)
-			rounded_rect(overall_height, overall_length, outer_radius);
-
-			translate([wall, wall, wall-0.01]) linear_extrude(overall_width - wall + 0.01)
-			square([inner_height, inner_length]);
-		}
-
-		rtc_offset_y = 10;
-		rtc_overall_x = 27.5;
-		rtc_offset_x = 25;
-		translate([wall, rpi_length + rtc_offset_y, rtc_overall_x + rtc_offset_x])
-		rtc_holder();
+	move([(inner_width + wall)/2, overall_length/2, overall_height/2])
+	difference() {
+		cuboid(
+			[inner_width + wall, overall_length, overall_height],
+			rounding=outer_radius,
+			except=[RIGHT]
+		);
+		
+		right(wall/2)
+		cuboid(
+			[inner_width + 0.01, inner_length, inner_height],
+			rounding=0.5,
+			except=[RIGHT]
+		);
 	}
 }
 
@@ -154,11 +127,23 @@ rpi_hole_offset_north = rpi_length - 3.5;
 rpi_hole_d = 2.75;
 
 top_cutout_depth = 0.2;
+
 module top_cutouts() {
 	translate([overall_width*.75, overall_length*.3])
 	rotate([0, 0, -90])
 	linear_extrude(top_cutout_depth)
 	import("tamanu_logo.svg", center = true);
+
+	air_offset_gap = 3;
+	air_height = 2 * overall_height / 7;
+	air_width = 2;
+	air_spacing = air_width + air_offset_gap;
+	air_n = overall_width / air_spacing - 2;
+
+	back(20)
+	right(air_spacing * (air_n/2 + 1))
+	xcopies(air_spacing, air_n)
+	cuboid([air_width, air_height, cutouts_thick], rounding=0.5);
 }
 
 module bottom_cutouts() {
@@ -289,7 +274,7 @@ module south_cutouts() {
 
 module left_leds() {
 	led_d = 3;
-	
+
 	rpi_led_v_offset = 1;
 	rpi_led_h_offset = 13.3;
 	south_of_rpi_led = rpi_south_of_board + rpi_led_h_offset;
@@ -306,14 +291,9 @@ module left_leds() {
 
 	x1201_led_v_offset = -pcb_thick - ups_standoffs + 1;
 	x1201_led_h_offsets = [
-		57.5, // chg
-		62.5, // pi5
-		67.5, // 5v0
-		
-		//75.5, // bat4
-		//79.7, // bat3
-		//83.8, // bat2
-		//88.0, // bat1
+		58.4, // chg
+		62.7, // pi5
+		67.0, // 5v0
 	];
 	for (x1201_led_h_offset = x1201_led_h_offsets) {
 		south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
@@ -321,10 +301,10 @@ module left_leds() {
 		rotate([0, -90, 0])
 		cylinder(h = wall, d = led_d);
 	}
-	
+
 	// battery
-	bat_start = 75.5 - led_d/2;
-	bat_end = 88.0 + led_d/2;
+	bat_start = 72;
+	bat_end = 90;
 	translate([-wall, rpi_south_of_board + bat_start, cutouts_bottom + x1201_led_v_offset - led_d/4])
 	cube([wall, bat_end - bat_start, led_d/2]);
 }
@@ -415,10 +395,10 @@ module right_cutouts() {
 }
 
 // right-text-inlay
-translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
+*translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
 
 // main-body
-!translate([0, 0, overall_width]) rotate([0, 90, 0]) {
+translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	// main body
 	color("white")
 	difference() {
@@ -428,8 +408,8 @@ translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
 		translate([0, 0, overall_height - top_cutout_depth + 0.01]) top_cutouts();
 		translate([0, wall*2]) south_cutouts();
 		translate([0, overall_length + wall*2]) north_cutouts();
-		translate([wall, 0]) left_cutouts();
-		translate([wall, 0]) left_leds();
+		translate([wall, 0]) xcopies(0.01) left_cutouts();
+		translate([wall, 0]) xcopies(0.01) left_leds();
 
 		// for reference only
 		*translate([overall_width + wall*2, 0]) right_cutouts();
@@ -447,6 +427,7 @@ union() {
 		linear_extrude(wall)
 		rounded_rect(overall_height, overall_length, outer_radius);
 
+		zcopies(0.01)
 		rotate([0, 90, 0]) {
 			right_cutouts();
 		}
@@ -461,11 +442,12 @@ union() {
 	bottom_lip_h = 1.5;
 
 	translate([0, 0, wall]) {
-		translate([overall_height - south_lip - wall, wall]) cube([south_lip, wall, wall]);
-		translate([overall_height - north_lip - wall, overall_length - wall*2]) cube([north_lip, wall, wall]);
-		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cube([wall, top_right_lip, wall]);
-		translate([overall_height - wall*2, wall]) cube([wall, top_left_lip, wall]);
-		translate([wall, wall]) cube([bottom_lip_h, bottom_lip, wall]);
+		anch=[-1,-1,-1];
+		translate([overall_height - south_lip - wall, wall]) cuboid([south_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - north_lip - wall, overall_length - wall*2]) cuboid([north_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cuboid([wall, top_right_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, wall]) cuboid([wall, top_left_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([wall, wall]) cuboid([bottom_lip_h, bottom_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
 	}
 
 	// tie
@@ -490,5 +472,5 @@ union() {
 }
 
 // light-pipes
-color("silver")
+*color("silver")
 translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
