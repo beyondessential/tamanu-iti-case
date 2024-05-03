@@ -151,6 +151,17 @@ union() {
 		], rounding=corners, except=[RIGHT]);
 	}
 
+	// right bar to hold cables
+	bar_z = left_top/2;
+	up(corners*3.25 + bar_z)
+	right(overall_x/4 - corners)
+	back(overall_y/2-bar_z/2)
+	cuboid([
+		overall_x/2 + corners*4,
+		bar_z,
+		bar_z,
+	], rounding=corners, except=[LEFT,RIGHT]);
+
 	// linkage for corners-chamfers
 	up(-(overcase_up + overhead_up + corners)/2 + corners)
 	right(overall_x/2+corners/2)
@@ -163,7 +174,7 @@ union() {
 	// screen holder panel
 	panel_bot = 20;
 	panel_top = left_top;
-	panel_thk = 7;
+	panel_thk = 7.1;
 	up(-(panel_bot + panel_top)/2 + panel_top)
 	right(overall_x/2+panel_thk/2)
 	difference() {
@@ -182,7 +193,7 @@ union() {
 
 		// cutout for screen bits
 		xcopies(0.01)
-		up(1.4) back(3.4)
+		up(0.5) back(3.4)
 		xflip() left(panel_thk/2) screen_back();
 	}
 }
