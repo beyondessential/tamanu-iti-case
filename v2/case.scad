@@ -67,7 +67,7 @@ x1001_standoffs = 16.75; // from top of rpi board to bottom of x1001 board
 // all assembled components, from "ground" to topmost point
 assembly_height = rpi_lift + max(rpi_height, pcb_thick + x1001_standoffs + x1001_height);
 
-breathing_room = 0.5; // height to leave above assembly
+breathing_room = 0.8; // height to leave above assembly
 inner_height = assembly_height + breathing_room;
 
 overall_height = inner_height + wall * 2;
@@ -75,6 +75,7 @@ echo(assembly_height=assembly_height, inner_height=inner_height, overall_height=
 
 // 44mm == 1U
 assert(overall_height <= 44);
+// current height is 43.75, leaving space for a 0.2mm bit of steel for a bracket
 
 module rounded_rect(width, height, corner_r) {
 	minkowski() {
@@ -129,7 +130,7 @@ rpi_hole_d = 2.75;
 top_cutout_depth = 0.2;
 
 module top_cutouts() {
-	translate([overall_width*.75, overall_length*.3])
+	translate([overall_width*.75, overall_length*.4])
 	rotate([0, 0, -90])
 	linear_extrude(top_cutout_depth)
 	import("tamanu_logo.svg", center = true);
@@ -140,7 +141,7 @@ module top_cutouts() {
 	air_spacing = air_width + air_offset_gap;
 	air_n = overall_width / air_spacing - 2;
 
-	back(20)
+	back(22)
 	right(air_spacing * (air_n/2 + 1))
 	xcopies(air_spacing, air_n)
 	cuboid([air_width, air_height, cutouts_thick], rounding=0.5);
@@ -176,10 +177,6 @@ module bottom_cutouts() {
 cutouts_bottom = rpi_bottom_of_board + pcb_thick - 0.4;
 cutouts_radius = 2;
 cutouts_thick = wall*5;
-
-module north_cutouts() {
-	// TODO: screen
-}
 
 module south_cutouts() {
 	usb_c_width = 10;
@@ -315,14 +312,28 @@ module left_cutouts() {
 	south_of_power = rpi_south_of_board + power_h_offset;
 	translate([0, south_of_power, cutouts_bottom + power_v_offset])
 	rotate([0, -90, 0]) {
-		cylinder(h = wall, d = 0.8);
+		cylinder(h = wall, d = 1.5);
 		cylinder(h = 0.6, d = 2.5);
 	}
 
-	x1201_button_v_offset = -1;
-	x1201_button_h_offset = 95.7;
-	x1201_button_bottom_d = 4.6;
-	x1201_button_top_d = 4.2;
+	screen_x = 10;
+	screen_y = 39.5;
+	screen_at_y = rpi_south_of_board + rpi_length - 1.5;
+	screen_z = 32;
+	screen_at_z = overall_height - wall - screen_z;
+	screen_corners = 5;
+	back(screen_at_y) up(screen_at_z) left(5)
+	cuboid(
+		[screen_x, screen_y, screen_z],
+		rounding=screen_corners,
+		except=[LEFT,RIGHT],
+		anchor=[-1, -1, -1]
+	);
+
+	x1201_button_v_offset = -2;
+	x1201_button_h_offset = 96.7;
+	x1201_button_bottom_d = 7;
+	x1201_button_top_d = 5.5;
 	south_of_x1201_button = rpi_south_of_board + x1201_button_h_offset;
 	translate([0, south_of_x1201_button, cutouts_bottom + x1201_button_v_offset])
 	rotate([0, -90, 0])
@@ -395,10 +406,10 @@ module right_cutouts() {
 }
 
 // right-text-inlay
-*translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
+translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
 
 // main-body
-translate([0, 0, overall_width]) rotate([0, 90, 0]) {
+!translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	// main body
 	color("white")
 	difference() {
@@ -407,7 +418,7 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 		bottom_cutouts();
 		translate([0, 0, overall_height - top_cutout_depth + 0.01]) top_cutouts();
 		translate([0, wall*2]) south_cutouts();
-		translate([0, overall_length + wall*2]) north_cutouts();
+		//translate([0, overall_length + wall*2]) north_cutouts();
 		translate([wall, 0]) xcopies(0.01) left_cutouts();
 		translate([wall, 0]) xcopies(0.01) left_leds();
 
@@ -472,5 +483,5 @@ union() {
 }
 
 // light-pipes
-*color("silver")
+color("silver")
 translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();

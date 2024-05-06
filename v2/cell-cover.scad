@@ -41,7 +41,7 @@ module cell_cover() {
 screen_overall_y = 38;
 screen_overall_z = 30;
 screen_corners = 5;
-screen_posts_d = 4.1;
+screen_posts_d = 4.0;
 screen_posts_x = 2.5;
 screen_posts_inset = 3;
 module screen_back() {
@@ -80,7 +80,7 @@ down(screen_overall_z/2) back(screen_overall_y/2) {
 
 	jst_x = 3.6;
 	jst_at_y = 20;
-	jst_y = 8;
+	jst_y = 12;
 	jst_at_z = 6;
 	jst_z = 18;
 	up(jst_at_z) fwd(jst_at_y)
@@ -91,24 +91,35 @@ down(screen_overall_z/2) back(screen_overall_y/2) {
 		except=[LEFT]
 	);
 
-	wires_x1 = 3.6;
-	wires_x2 = 2;
-	wires_at_y = jst_at_y + jst_y - 0.5;
-	wires_y = overall_y - wires_at_y + corners + 0.5;
-	wires_at_z = 9;
-	wires_z1 = 12;
-	wires_z2 = 6;
-	up(wires_z1+wires_at_z) fwd(wires_at_y)
-	prismoid(
-		size1=[wires_x1, wires_z1],
-		size2=[wires_x2, wires_z2],
-		shift=[-(wires_x1-wires_x2), 0],
-		h=wires_y,
+	wires_x = 6;
+	wires_y = 8;
+	wires_at_y = jst_at_y + jst_y - wires_y;
+	wires_at_z = jst_at_z;
+	wires_z = jst_z;
+	up(wires_at_z) fwd(wires_at_y)
+	cuboid(
+		[wires_x, wires_y, wires_z],
 		anchor=[-1, 1, -1],
-		orient=FORWARD
+		rounding=0.5,
+		except=[LEFT]
+	);
+
+	via_x = 11;
+	via_y = 8;
+	via_at_y = jst_at_y + jst_y - via_y;
+	via_at_z = jst_at_z;
+	via_z = jst_z/3-corners;
+	up(via_at_z) fwd(via_at_y)
+	cuboid(
+		[via_x, via_y, via_z],
+		anchor=[-1, 1, -1],
+		rounding=0.5,
+		except=[LEFT]
 	);
 }
 }
+
+//!screen_back();
 
 overall_x = cell_depth + overcase_dl*2;
 overall_y = cell_diameter*2 + cell_spacing + overcase_dw*2;
@@ -193,7 +204,8 @@ union() {
 
 		// cutout for screen bits
 		xcopies(0.01)
+		xflip() left(panel_thk/2)
 		up(0.5) back(3.4)
-		xflip() left(panel_thk/2) screen_back();
+		xrot(180) screen_back();
 	}
 }
