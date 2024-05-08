@@ -306,10 +306,10 @@ module left_cutouts() {
 		anchor=[-1, -1, -1]
 	);
 
-	x1201_button_v_offset = -2;
-	x1201_button_h_offset = 96.7;
-	x1201_button_bottom_d = 7;
-	x1201_button_top_d = 5.5;
+	x1201_button_v_offset = -1.3;
+	x1201_button_h_offset = 96;
+	x1201_button_bottom_d = 5.4;
+	x1201_button_top_d = 4.2;
 	south_of_x1201_button = rpi_south_of_board + x1201_button_h_offset;
 	translate([0, south_of_x1201_button, cutouts_bottom + x1201_button_v_offset])
 	rotate([0, -90, 0])
