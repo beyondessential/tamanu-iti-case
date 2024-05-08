@@ -274,31 +274,12 @@ module left_leds() {
 	rotate([0, -90, 0])
 	cylinder(h = wall, d = led_d);
 
-	x1001_led_v_offset = x1001_standoffs + 2;
-	x1001_led_h_offset = 40.5;
-	south_of_x1001_led = rpi_south_of_board + x1001_led_h_offset;
-	translate([0, south_of_x1001_led, cutouts_bottom + x1001_led_v_offset])
+	x1201_led_v_offset = -pcb_thick - ups_standoffs + 1;
+	x1201_led_h_offset = 58.4;
+	south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
+	translate([0, south_of_x1201_led, cutouts_bottom + x1201_led_v_offset])
 	rotate([0, -90, 0])
 	cylinder(h = wall, d = led_d);
-
-	x1201_led_v_offset = -pcb_thick - ups_standoffs + 1;
-	x1201_led_h_offsets = [
-		58.4, // chg
-		62.7, // pi5
-		67.0, // 5v0
-	];
-	for (x1201_led_h_offset = x1201_led_h_offsets) {
-		south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
-		translate([0, south_of_x1201_led, cutouts_bottom + x1201_led_v_offset])
-		rotate([0, -90, 0])
-		cylinder(h = wall, d = led_d);
-	}
-
-	// battery
-	bat_start = 72;
-	bat_end = 90;
-	translate([-wall, rpi_south_of_board + bat_start, cutouts_bottom + x1201_led_v_offset - led_d/4])
-	cube([wall, bat_end - bat_start, led_d/2]);
 }
 
 module left_cutouts() {
