@@ -21,11 +21,6 @@ outer = 68.70;
 shelf = 1.2;
 ridge = 1;
 
-length = 68;
-extended = 30;
-
-curvature = 300;
-
 gpio_length = 55;
 gpio_width = 6;
 gpio_x = 10;
