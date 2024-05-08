@@ -312,9 +312,9 @@ module left_cutouts() {
 	}
 
 	screen_x = 10;
-	screen_y = 39.5;
-	screen_at_y = rpi_south_of_board + rpi_length - 1.5;
-	screen_z = 32;
+	screen_y = 40;
+	screen_at_y = rpi_south_of_board + rpi_length - 2;
+	screen_z = 32.5;
 	screen_at_z = overall_height - wall - screen_z;
 	screen_corners = 5;
 	back(screen_at_y) up(screen_at_z) left(5)
