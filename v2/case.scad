@@ -134,7 +134,7 @@ module top_cutouts() {
 	air_height = 2 * overall_height / 7;
 	air_width = 2;
 	air_spacing = air_width + air_offset_gap;
-	air_n = overall_width / air_spacing - 2;
+	air_n = overall_width / air_spacing - 3;
 
 	back(22)
 	right(air_spacing * (air_n/2 + 1))
