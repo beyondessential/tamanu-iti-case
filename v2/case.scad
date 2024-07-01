@@ -175,11 +175,12 @@ cutouts_bottom = rpi_bottom_of_board + pcb_thick - 0.4;
 cutouts_radius = 2;
 cutouts_thick = wall*5;
 
-module south_cutouts() {
+module south_cutouts() { translate([0, -wall, 0]) {
 	usb_c_width = 10;
 	usb_c_height = 4.8;
 
-	dip = 2;
+	dip_out = 1.2;
+	dip_in = 0.6;
 	usb_c_dip_width = 13;
 	usb_c_dip_height = 8;
 	usb_c_dip_r = 3;
@@ -194,9 +195,17 @@ module south_cutouts() {
 		translate([
 			(usb_c_width - usb_c_dip_width)/2,
 			(usb_c_height - usb_c_dip_height)/2,
-			wall*2 - dip
+			wall - dip_out
 		])
 		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			0
+		])
+		linear_extrude(dip_in)
 		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
 	}
 
@@ -216,9 +225,17 @@ module south_cutouts() {
 			translate([
 				(hdmi_width - hdmi_dip_width)/2,
 				(hdmi_height - hdmi_dip_height)/2,
-				wall*2 - dip
+				wall - dip_out
 			])
 			linear_extrude(cutouts_thick)
+			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
+			
+			translate([
+				(hdmi_width - hdmi_dip_width)/2,
+				(hdmi_height - hdmi_dip_height)/2,
+				0
+			])
+			linear_extrude(dip_in)
 			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
 		}
 	}
@@ -234,9 +251,17 @@ module south_cutouts() {
 		translate([
 			(usb_c_width - usb_c_dip_width)/2,
 			(usb_c_height - usb_c_dip_height)/2,
-			wall*2 - dip
+			wall - dip_out
 		])
 		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+		
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			0
+		])
+		linear_extrude(dip_in)
 		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
 
 		label_h = 0.6;
@@ -264,7 +289,7 @@ module south_cutouts() {
 	rotate([90, 0, 0])
 	linear_extrude(cutouts_thick)
 	rounded_rect(air_width, air_height, 0.5);
-}
+} }
 
 module left_leds() {
 	led_d = 3;
@@ -389,7 +414,7 @@ color("silver")
 translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
 
 // main-body
-!translate([0, 0, overall_width]) rotate([0, 90, 0]) {
+translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	// main body
 	color("white")
 	difference() {
@@ -397,7 +422,7 @@ translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
 
 		bottom_cutouts();
 		translate([0, 0, overall_height - top_cutout_depth + 0.01]) top_cutouts();
-		translate([0, wall*2]) south_cutouts();
+		translate([0, wall*2]) ycopies(0.01) south_cutouts();
 		//translate([0, overall_length + wall*2]) north_cutouts();
 		translate([wall, 0]) xcopies(0.01) left_cutouts();
 		translate([wall, 0]) xcopies(0.01) left_leds();
