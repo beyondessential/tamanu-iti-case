@@ -160,6 +160,16 @@ union() {
 			pocket_y,
 			pocket_z,
 		], rounding=corners, except=[RIGHT]);
+		
+		left(overall_x/2-corners/2+0.01)
+		xrot(90)
+		text3d(
+			"ITI V3.0",
+			size=7,
+			anchor=CENTER,
+			h=corners,
+			orient=LEFT
+		);
 	}
 
 	// right bar to hold cables

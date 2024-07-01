@@ -83,18 +83,20 @@ rpi_bottom_of_board = wall + rpi_lift;
 rpi_left_of_board = overall_width - rpi_width - rpi_hangs_right;
 rpi_south_of_board = wall + rpi_hangs_south;
 
+branding_cut = 0.4;
 module right_branding() {
-	linear_extrude(0.2)
+	linear_extrude(branding_cut)
 	translate([overall_length - wall*1.2, wall])
-	translate([0, 30]) {
-		font = "FiraCode:style=Medium";
-		text("TAMANU ITI", size = 4, font=font, halign = "right");
-		translate([0, -4]) text("2024 ♥ BES", size = 3, font=font, halign = "right");
+	translate([0, 34]) {
+		font = "FiraCode:style=Bold";
+		text("TAMANU ITI", size = 4.5, font=font, halign = "right");
+		translate([0, -4.5]) text("2024 ♥ BES", size = 3.5, font=font, halign = "right");
 		translate([0, -10.5]) text("RATING 5▪1V=5A", size = 3, font=font, halign = "right");
 		translate([0, -14.5]) text("BATTERY Li-ion", size = 3, font=font, halign = "right");
 		translate([0, -18.5]) text("3▪6V 6360mAh", size = 3, font=font, halign = "right");
-		translate([0, -26]) text("www.bes.au", size = 4, font=font, halign = "right");
-		translate([0, -30]) text("made in new zealand", size = 2.1, font=font, halign = "right");
+		translate([0, -26]) text("w w w.bes.au", size = 4, font=font, halign = "right");
+		translate([0, -31]) text("made in    ", size = 2.6, font=font, halign = "right");
+		translate([0, -34]) text("new zealand", size = 2.6, font=font, halign = "right");
 	}
 }
 
@@ -376,13 +378,15 @@ module right_cutouts() {
 		]);
 	}
 	
-	translate([-0.2, 0, 0])
+	translate([-branding_cut, 0, 0])
 	rotate([90, 0, 90])
 	right_branding();
 }
 
-// right-text-inlay
-translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
+
+// light-pipes
+color("silver")
+translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
 
 // main-body
 !translate([0, 0, overall_width]) rotate([0, 90, 0]) {
@@ -423,8 +427,8 @@ union() {
 	// TODO: parametrise these from ssd, pcb, etc dimensions
 	south_lip = 24;
 	north_lip = 30;
-	top_right_lip = 73;
-	top_left_lip = 5;
+	top_right_lip = 8;
+	top_left_lip = 55;
 	bottom_lip = 65;
 	bottom_lip_h = 1.5;
 
@@ -458,6 +462,5 @@ union() {
 	}
 }
 
-// light-pipes
-color("silver")
-translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
+// right-text-inlay
+translate([0, 0, branding_cut]) rotate([0, 180, -90]) color("blue") right_branding();
