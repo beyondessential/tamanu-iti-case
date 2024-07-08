@@ -1,5 +1,26 @@
 # Tamanu Iti cases
 
+## v3 full case
+
+Full 3D printed case.
+Embeds a UPS.
+Includes an internal spacer to secure the battery cells and hold a screen.
+Secured with a screw.
+Reduces light pipes to expose only two status LEDs.
+Rotates case to simplify assembly (text is now on lids).
+
+This is the current production version.
+
+- [Model (OpenSCAD code)](./v3/case.scad)
+  - [Model for spacer](./v3/cell-cover.scad)
+- [Main body](./v3/renders/main-body.stl)
+  - [Light pipes](./v3/renders/light-pipes.stl)
+- [Lid](./v3/renders/lid.stl)
+  - [Text inlay](./v3/renders/right-text-inlay.stl)
+- [Spacer](./v3/renders/cell-cover.stl)
+
+<!-- ![Photo of the 3D printed and fully assembled case](./v3/renders/assembled.jpg) -->
+
 ## v2 full case
 
 Full 3D printed case.
@@ -7,7 +28,7 @@ Embeds a UPS.
 Changes the assembly orientation to slot the boards in tight.
 Secured with a screw.
 
-This is the current production version.
+This was used for two demo units, one of which was given to Naitauba Clinic.
 
 - [Model (OpenSCAD code)](./v2/case.scad)
 - [Main body](./v2/renders/main-body.stl)
@@ -52,19 +73,3 @@ Meant to fit on top of the official case (replacing the "lid").
 - [Version 4 STL](./proto-0/renders/case-proto-4.stl) and [text inlay](./proto-0/renders/case-proto-4T.stl)
 - [Version 5 STL](./proto-0/renders/case-proto-5.stl) and [text inlay](./proto-0/renders/case-proto-5T.stl)
 
-# E-ink screen
-
-2.13" WeAct Epaper module
-
-## SPI [pinout](https://pinout.xyz/pinout/spi)
-
-| SPI Name | Pin | Wire colour            | Pin | RPi Name  |
-|----------|-----|------------------------|-----|-----------|
-| BUSY     | 1   | :purple_circle: purple   | 16  | GPIO 23   |
-| RES      | 2   | :orange_circle: orange | 18  | GPIO 24   |
-| D/C      | 3   | :white_circle: white   | 22  | GPIO 25   |
-| CS       | 4   | 🔵 blue                | 24  | SPI0 CE0  |
-| SCL      | 5   | :green_circle: green   | 23  | SPI0 SCLK |
-| SDA      | 6   | :yellow_circle: yellow | 19  | SPI0 MOSI |
-| GND      | 7   | :black_circle: black   | 20  | Ground    |
-| VCC      | 8   | :red_circle: red       | 17  | 3v3 Power |

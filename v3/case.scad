@@ -1,3 +1,4 @@
+include <BOSL2/std.scad>;
 include <../vendor/RaspberryPi5.scad>;
 
 // width  = along x axis
@@ -16,15 +17,9 @@ pcb_thick = 1.6;
 
 $fn = 36;
 
-radius = 6;
 outer = 68.70;
 shelf = 1.2;
 ridge = 1;
-
-length = 68;
-extended = 30;
-
-curvature = 300;
 
 gpio_length = 55;
 gpio_width = 6;
@@ -34,7 +29,7 @@ gpio_y = 12;
 inner_width = 85.5;
 inner_length = 107.4 + rpi_hangs_south;
 
-outer_radius = 4;
+outer_radius = 2;
 lid_dip = 5;
 lid_tolerance = 0; // may need to be negative for materials with more flex
 wall = 2.5;
@@ -59,7 +54,7 @@ rpi_lift = ground_to_ups + pcb_thick + ups_standoffs + extra_lift;
 
 x1001_nominal_height = 7.7; // from bottom of x1001 to top of power port
 x1001_to_ssd_top = 6.85;
-ssd_heatsink_height = 0; // no heatsink in v2.0
+ssd_heatsink_height = 4.6;
 x1001_height = max(x1001_nominal_height, x1001_to_ssd_top + ssd_heatsink_height);
 
 x1001_standoffs = 16.75; // from top of rpi board to bottom of x1001 board
@@ -67,11 +62,15 @@ x1001_standoffs = 16.75; // from top of rpi board to bottom of x1001 board
 // all assembled components, from "ground" to topmost point
 assembly_height = rpi_lift + max(rpi_height, pcb_thick + x1001_standoffs + x1001_height);
 
-breathing_room = 0.5; // height to leave above assembly
+breathing_room = 0.8; // height to leave above assembly
 inner_height = assembly_height + breathing_room;
 
 overall_height = inner_height + wall * 2;
 echo(assembly_height=assembly_height, inner_height=inner_height, overall_height=overall_height);
+
+// 44mm == 1U
+assert(overall_height <= 44);
+// current height is 43.75, leaving space for a 0.2mm bit of steel for a bracket
 
 module rounded_rect(width, height, corner_r) {
 	minkowski() {
@@ -84,67 +83,38 @@ rpi_bottom_of_board = wall + rpi_lift;
 rpi_left_of_board = overall_width - rpi_width - rpi_hangs_right;
 rpi_south_of_board = wall + rpi_hangs_south;
 
+branding_cut = 0.4;
 module right_branding() {
-	linear_extrude(0.2)
+	linear_extrude(branding_cut)
 	translate([overall_length - wall*1.2, wall])
-	translate([0, 30]) {
-		font = "FiraCode:style=Medium";
-		text("TAMANU ITI", size = 4, font=font, halign = "right");
-		translate([0, -4]) text("2024 ♥ BES", size = 3, font=font, halign = "right");
+	translate([0, 34]) {
+		font = "FiraCode:style=Bold";
+		text("TAMANU ITI", size = 4.5, font=font, halign = "right");
+		translate([0, -4.5]) text("2024 ♥ BES", size = 3.5, font=font, halign = "right");
 		translate([0, -10.5]) text("RATING 5▪1V=5A", size = 3, font=font, halign = "right");
 		translate([0, -14.5]) text("BATTERY Li-ion", size = 3, font=font, halign = "right");
 		translate([0, -18.5]) text("3▪6V 6360mAh", size = 3, font=font, halign = "right");
-		translate([0, -26]) text("www.bes.au", size = 4, font=font, halign = "right");
-		translate([0, -30]) text("made in new zealand", size = 2.1, font=font, halign = "right");
-	}
-}
-
-module rtc_holder() {
-	rtc_height = 2.7;
-	rtc_d = 25;
-	rtc_wall = 1;
-	
-	translate([rtc_height + rtc_wall, rtc_d, 0])
-	rotate([90, 0, 0]) rotate([0, 0, 90]) {
-		// tray
-		linear_extrude(rtc_d) {
-			intersection() {
-				square(rtc_height + rtc_wall);
-				difference() {
-					translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height + rtc_wall);
-					translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height);
-				}
-			}
-			translate([rtc_height, 0]) square([rtc_d - rtc_height, rtc_wall]);
-		}
-
-		// wall
-		translate([0, 0, 0]) linear_extrude(rtc_wall) {
-			intersection() {
-				square(rtc_height + rtc_wall);
-				translate([rtc_height + rtc_wall, rtc_height + rtc_wall]) circle(r = rtc_height + rtc_wall);
-			}
-			translate([rtc_height, 0]) square([rtc_d - rtc_height, rtc_height + rtc_wall]);
-		}
+		translate([0, -26]) text("w w w.bes.au", size = 4, font=font, halign = "right");
+		translate([0, -31]) text("made in    ", size = 2.6, font=font, halign = "right");
+		translate([0, -34]) text("new zealand", size = 2.6, font=font, halign = "right");
 	}
 }
 
 module outer_casing() {
-	translate([0, 0, overall_height]) rotate([0, 90, 0])
-	{
-		difference() {
-			linear_extrude(inner_width + wall)
-			rounded_rect(overall_height, overall_length, outer_radius);
-
-			translate([wall, wall, wall-0.01]) linear_extrude(overall_width - wall + 0.01)
-			square([inner_height, inner_length]);
-		}
-
-		rtc_offset_y = 10;
-		rtc_overall_x = 27.5;
-		rtc_offset_x = 25;
-		translate([wall, rpi_length + rtc_offset_y, rtc_overall_x + rtc_offset_x])
-		rtc_holder();
+	move([(inner_width + wall)/2, overall_length/2, overall_height/2])
+	difference() {
+		cuboid(
+			[inner_width + wall, overall_length, overall_height],
+			rounding=outer_radius,
+			except=[RIGHT]
+		);
+		
+		right(wall/2)
+		cuboid(
+			[inner_width + 0.01, inner_length, inner_height],
+			rounding=0.5,
+			except=[RIGHT]
+		);
 	}
 }
 
@@ -155,11 +125,23 @@ rpi_hole_offset_north = rpi_length - 3.5;
 rpi_hole_d = 2.75;
 
 top_cutout_depth = 0.2;
+
 module top_cutouts() {
-	translate([overall_width*.75, overall_length*.3])
+	translate([overall_width*.75, overall_length*.4])
 	rotate([0, 0, -90])
 	linear_extrude(top_cutout_depth)
 	import("tamanu_logo.svg", center = true);
+
+	air_offset_gap = 3;
+	air_height = 2 * overall_height / 7;
+	air_width = 2;
+	air_spacing = air_width + air_offset_gap;
+	air_n = overall_width / air_spacing - 3;
+
+	back(22)
+	right(air_spacing * (air_n/2 + 1))
+	xcopies(air_spacing, air_n)
+	cuboid([air_width, air_height, cutouts_thick], rounding=0.5);
 }
 
 module bottom_cutouts() {
@@ -193,15 +175,12 @@ cutouts_bottom = rpi_bottom_of_board + pcb_thick - 0.4;
 cutouts_radius = 2;
 cutouts_thick = wall*5;
 
-module north_cutouts() {
-	// TODO: screen
-}
-
-module south_cutouts() {
+module south_cutouts() { translate([0, -wall, 0]) {
 	usb_c_width = 10;
 	usb_c_height = 4.8;
 
-	dip = 2;
+	dip_out = 1.2;
+	dip_in = 0.6;
 	usb_c_dip_width = 13;
 	usb_c_dip_height = 8;
 	usb_c_dip_r = 3;
@@ -216,9 +195,17 @@ module south_cutouts() {
 		translate([
 			(usb_c_width - usb_c_dip_width)/2,
 			(usb_c_height - usb_c_dip_height)/2,
-			wall*2 - dip
+			wall - dip_out
 		])
 		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			0
+		])
+		linear_extrude(dip_in)
 		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
 	}
 
@@ -238,9 +225,17 @@ module south_cutouts() {
 			translate([
 				(hdmi_width - hdmi_dip_width)/2,
 				(hdmi_height - hdmi_dip_height)/2,
-				wall*2 - dip
+				wall - dip_out
 			])
 			linear_extrude(cutouts_thick)
+			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
+			
+			translate([
+				(hdmi_width - hdmi_dip_width)/2,
+				(hdmi_height - hdmi_dip_height)/2,
+				0
+			])
+			linear_extrude(dip_in)
 			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
 		}
 	}
@@ -256,9 +251,17 @@ module south_cutouts() {
 		translate([
 			(usb_c_width - usb_c_dip_width)/2,
 			(usb_c_height - usb_c_dip_height)/2,
-			wall*2 - dip
+			wall - dip_out
 		])
 		linear_extrude(cutouts_thick)
+		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
+		
+		translate([
+			(usb_c_width - usb_c_dip_width)/2,
+			(usb_c_height - usb_c_dip_height)/2,
+			0
+		])
+		linear_extrude(dip_in)
 		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
 
 		label_h = 0.6;
@@ -286,11 +289,11 @@ module south_cutouts() {
 	rotate([90, 0, 0])
 	linear_extrude(cutouts_thick)
 	rounded_rect(air_width, air_height, 0.5);
-}
+} }
 
 module left_leds() {
 	led_d = 3;
-	
+
 	rpi_led_v_offset = 1;
 	rpi_led_h_offset = 13.3;
 	south_of_rpi_led = rpi_south_of_board + rpi_led_h_offset;
@@ -298,30 +301,12 @@ module left_leds() {
 	rotate([0, -90, 0])
 	cylinder(h = wall, d = led_d);
 
-	x1001_led_v_offset = x1001_standoffs + 2;
-	x1001_led_h_offset = 40.5;
-	south_of_x1001_led = rpi_south_of_board + x1001_led_h_offset;
-	translate([0, south_of_x1001_led, cutouts_bottom + x1001_led_v_offset])
+	x1201_led_v_offset = -pcb_thick - ups_standoffs + 1;
+	x1201_led_h_offset = 58.4;
+	south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
+	translate([0, south_of_x1201_led, cutouts_bottom + x1201_led_v_offset])
 	rotate([0, -90, 0])
 	cylinder(h = wall, d = led_d);
-
-	x1201_led_v_offset = -pcb_thick - ups_standoffs + 1;
-	x1201_led_h_offsets = [
-		57.5, // chg
-		62.5, // pi5
-		67.5, // 5v0
-		
-		75.5, // bat4
-		79.7, // bat3
-		83.8, // bat2
-		88.0, // bat1
-	];
-	for (x1201_led_h_offset = x1201_led_h_offsets) {
-		south_of_x1201_led = rpi_south_of_board + x1201_led_h_offset;
-		translate([0, south_of_x1201_led, cutouts_bottom + x1201_led_v_offset])
-		rotate([0, -90, 0])
-		cylinder(h = wall, d = led_d);
-	}
 }
 
 module left_cutouts() {
@@ -330,13 +315,27 @@ module left_cutouts() {
 	south_of_power = rpi_south_of_board + power_h_offset;
 	translate([0, south_of_power, cutouts_bottom + power_v_offset])
 	rotate([0, -90, 0]) {
-		cylinder(h = wall, d = 0.8);
+		cylinder(h = wall, d = 1.5);
 		cylinder(h = 0.6, d = 2.5);
 	}
 
-	x1201_button_v_offset = -1;
-	x1201_button_h_offset = 95.7;
-	x1201_button_bottom_d = 4.6;
+	screen_x = 10;
+	screen_y = 40;
+	screen_at_y = rpi_south_of_board + rpi_length - 2;
+	screen_z = 32.5;
+	screen_at_z = overall_height - wall - screen_z;
+	screen_corners = 5;
+	back(screen_at_y) up(screen_at_z) left(5)
+	cuboid(
+		[screen_x, screen_y, screen_z],
+		rounding=screen_corners,
+		except=[LEFT,RIGHT],
+		anchor=[-1, -1, -1]
+	);
+
+	x1201_button_v_offset = -1.3;
+	x1201_button_h_offset = 96;
+	x1201_button_bottom_d = 5.4;
 	x1201_button_top_d = 4.2;
 	south_of_x1201_button = rpi_south_of_board + x1201_button_h_offset;
 	translate([0, south_of_x1201_button, cutouts_bottom + x1201_button_v_offset])
@@ -404,13 +403,15 @@ module right_cutouts() {
 		]);
 	}
 	
-	translate([-0.2, 0, 0])
+	translate([-branding_cut, 0, 0])
 	rotate([90, 0, 90])
 	right_branding();
 }
 
-// right-text-inlay
-translate([0, 0, 0.2]) rotate([0, 180, -90]) color("blue") right_branding();
+
+// light-pipes
+color("silver")
+translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
 
 // main-body
 translate([0, 0, overall_width]) rotate([0, 90, 0]) {
@@ -421,10 +422,10 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 
 		bottom_cutouts();
 		translate([0, 0, overall_height - top_cutout_depth + 0.01]) top_cutouts();
-		translate([0, wall*2]) south_cutouts();
-		translate([0, overall_length + wall*2]) north_cutouts();
-		translate([wall, 0]) left_cutouts();
-		translate([wall, 0]) left_leds();
+		translate([0, wall*2]) ycopies(0.01) south_cutouts();
+		//translate([0, overall_length + wall*2]) north_cutouts();
+		translate([wall, 0]) xcopies(0.01) left_cutouts();
+		translate([wall, 0]) xcopies(0.01) left_leds();
 
 		// for reference only
 		*translate([overall_width + wall*2, 0]) right_cutouts();
@@ -442,6 +443,7 @@ union() {
 		linear_extrude(wall)
 		rounded_rect(overall_height, overall_length, outer_radius);
 
+		zcopies(0.01)
 		rotate([0, 90, 0]) {
 			right_cutouts();
 		}
@@ -450,17 +452,18 @@ union() {
 	// TODO: parametrise these from ssd, pcb, etc dimensions
 	south_lip = 24;
 	north_lip = 30;
-	top_right_lip = 73;
-	top_left_lip = 5;
+	top_right_lip = 8;
+	top_left_lip = 55;
 	bottom_lip = 65;
 	bottom_lip_h = 1.5;
 
 	translate([0, 0, wall]) {
-		translate([overall_height - south_lip - wall, wall]) cube([south_lip, wall, wall]);
-		translate([overall_height - north_lip - wall, overall_length - wall*2]) cube([north_lip, wall, wall]);
-		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cube([wall, top_right_lip, wall]);
-		translate([overall_height - wall*2, wall]) cube([wall, top_left_lip, wall]);
-		translate([wall, wall]) cube([bottom_lip_h, bottom_lip, wall]);
+		anch=[-1,-1,-1];
+		translate([overall_height - south_lip - wall, wall]) cuboid([south_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - north_lip - wall, overall_length - wall*2]) cuboid([north_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cuboid([wall, top_right_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, wall]) cuboid([wall, top_left_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([wall, wall]) cuboid([bottom_lip_h, bottom_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
 	}
 
 	// tie
@@ -484,6 +487,5 @@ union() {
 	}
 }
 
-// light-pipes
-color("silver")
-translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
+// right-text-inlay
+translate([0, 0, branding_cut]) rotate([0, 180, -90]) color("blue") right_branding();
