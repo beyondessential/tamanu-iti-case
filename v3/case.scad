@@ -402,10 +402,6 @@ module right_cutouts() {
 			x1001_to_ssd_top + x1001_slots_extra_z * 2
 		]);
 	}
-	
-	translate([-branding_cut, 0, 0])
-	rotate([90, 0, 90])
-	right_branding();
 }
 
 
@@ -446,6 +442,10 @@ union() {
 		zcopies(0.01)
 		rotate([0, 90, 0]) {
 			right_cutouts();
+
+			translate([-branding_cut, 0, 0])
+			rotate([90, 0, 90])
+			right_branding();
 		}
 	}
 
@@ -488,4 +488,16 @@ union() {
 }
 
 // right-text-inlay
-translate([0, 0, branding_cut]) rotate([0, 180, -90]) color("blue") right_branding();
+up(branding_cut) rotate([0, 180, -90]) color("blue") right_branding();
+
+// transparent text shield
+color("#ffffff44")
+down(0.4) difference() {
+	linear_extrude(0.4)
+	rounded_rect(overall_height, overall_length, outer_radius);
+
+	zcopies(0.01)
+	rotate([0, 90, 0]) {
+		right_cutouts();
+	}
+}
