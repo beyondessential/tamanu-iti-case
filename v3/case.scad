@@ -436,9 +436,10 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 }
 
 // lid
-union() {
+shield = layer * 2;
+up(shield) union() {
 	difference() {
-		linear_extrude(wall)
+		linear_extrude(wall-shield)
 		rounded_rect(overall_height, overall_length, outer_radius);
 
 		zcopies(0.01)
@@ -459,7 +460,7 @@ union() {
 	bottom_lip = 65;
 	bottom_lip_h = 1.5;
 
-	translate([0, 0, wall]) {
+	up(wall-shield) {
 		anch=[-1,-1,-1];
 		translate([overall_height - south_lip - wall, wall]) cuboid([south_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
 		translate([overall_height - north_lip - wall, overall_length - wall*2]) cuboid([north_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
@@ -490,15 +491,15 @@ union() {
 }
 
 // right-text-inlay
-up(branding_cut) rotate([0, 180, -90]) color("blue") right_branding();
+up(branding_cut+shield) rotate([0, 180, -90]) color("blue") right_branding();
 
 // transparent text shield
 color("#ffffff44")
-down(0.4) difference() {
-	linear_extrude(0.4)
+difference() {
+	linear_extrude(layer * 2)
 	rounded_rect(overall_height, overall_length, outer_radius);
 
-	zcopies(0.01)
+	down(0.005) zcopies(0.01)
 	rotate([0, 90, 0]) {
 		right_cutouts();
 	}
