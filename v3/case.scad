@@ -5,6 +5,8 @@ include <../vendor/RaspberryPi5.scad>;
 // length = along y axis
 // height = along z axis
 
+layer = 0.2;
+
 rpi_width = 85;
 rpi_length = 56;
 rpi_height = 17.6; // from bottom of board to top lip of USB A ports
@@ -83,7 +85,7 @@ rpi_bottom_of_board = wall + rpi_lift;
 rpi_left_of_board = overall_width - rpi_width - rpi_hangs_right;
 rpi_south_of_board = wall + rpi_hangs_south;
 
-branding_cut = 0.4;
+branding_cut = layer * 2;
 module right_branding() {
 	linear_extrude(branding_cut)
 	translate([overall_length - wall*1.2, wall])
@@ -124,7 +126,7 @@ rpi_hole_offset_south = 3.5;
 rpi_hole_offset_north = rpi_length - 3.5;
 rpi_hole_d = 2.75;
 
-top_cutout_depth = 0.2;
+top_cutout_depth = layer;
 
 module top_cutouts() {
 	translate([overall_width*.75, overall_length*.4])
