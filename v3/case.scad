@@ -97,8 +97,8 @@ module right_branding() {
 		translate([0, -14.5]) text("BATTERY Li-ion", size = 3, font=font, halign = "right");
 		translate([0, -18.5]) text("3▪6V 6360mAh", size = 3, font=font, halign = "right");
 		translate([0, -26]) text("w w w.bes.au", size = 4, font=font, halign = "right");
-		translate([0, -31]) text("made in    ", size = 2.6, font=font, halign = "right");
-		translate([0, -34]) text("new zealand", size = 2.6, font=font, halign = "right");
+		translate([0, -31]) text("made in  aotearoa", size = 2.6, font=font, halign = "right");
+		translate([0, -34.5]) text("new zealand", size = 2.6, font=font, halign = "right");
 	}
 }
 
