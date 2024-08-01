@@ -5,6 +5,8 @@ include <../vendor/RaspberryPi5.scad>;
 // length = along y axis
 // height = along z axis
 
+layer = 0.2;
+
 rpi_width = 85;
 rpi_length = 56;
 rpi_height = 17.6; // from bottom of board to top lip of USB A ports
@@ -83,7 +85,7 @@ rpi_bottom_of_board = wall + rpi_lift;
 rpi_left_of_board = overall_width - rpi_width - rpi_hangs_right;
 rpi_south_of_board = wall + rpi_hangs_south;
 
-branding_cut = 0.4;
+branding_cut = layer * 2;
 module right_branding() {
 	linear_extrude(branding_cut)
 	translate([overall_length - wall*1.2, wall])
@@ -95,8 +97,8 @@ module right_branding() {
 		translate([0, -14.5]) text("BATTERY Li-ion", size = 3, font=font, halign = "right");
 		translate([0, -18.5]) text("3▪6V 6360mAh", size = 3, font=font, halign = "right");
 		translate([0, -26]) text("w w w.bes.au", size = 4, font=font, halign = "right");
-		translate([0, -31]) text("made in    ", size = 2.6, font=font, halign = "right");
-		translate([0, -34]) text("new zealand", size = 2.6, font=font, halign = "right");
+		translate([0, -31]) text("made in  aotearoa", size = 2.6, font=font, halign = "right");
+		translate([0, -34.5]) text("new zealand", size = 2.6, font=font, halign = "right");
 	}
 }
 
@@ -124,7 +126,7 @@ rpi_hole_offset_south = 3.5;
 rpi_hole_offset_north = rpi_length - 3.5;
 rpi_hole_d = 2.75;
 
-top_cutout_depth = 0.2;
+top_cutout_depth = layer;
 
 module top_cutouts() {
 	translate([overall_width*.75, overall_length*.4])
@@ -402,10 +404,6 @@ module right_cutouts() {
 			x1001_to_ssd_top + x1001_slots_extra_z * 2
 		]);
 	}
-	
-	translate([-branding_cut, 0, 0])
-	rotate([90, 0, 90])
-	right_branding();
 }
 
 
@@ -438,14 +436,19 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 }
 
 // lid
-union() {
+shield = layer * 2;
+up(shield) union() {
 	difference() {
-		linear_extrude(wall)
+		linear_extrude(wall-shield)
 		rounded_rect(overall_height, overall_length, outer_radius);
 
 		zcopies(0.01)
 		rotate([0, 90, 0]) {
 			right_cutouts();
+
+			translate([-branding_cut, 0, 0])
+			rotate([90, 0, 90])
+			right_branding();
 		}
 	}
 
@@ -457,7 +460,7 @@ union() {
 	bottom_lip = 65;
 	bottom_lip_h = 1.5;
 
-	translate([0, 0, wall]) {
+	up(wall-shield) {
 		anch=[-1,-1,-1];
 		translate([overall_height - south_lip - wall, wall]) cuboid([south_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
 		translate([overall_height - north_lip - wall, overall_length - wall*2]) cuboid([north_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
@@ -488,4 +491,23 @@ union() {
 }
 
 // right-text-inlay
-translate([0, 0, branding_cut]) rotate([0, 180, -90]) color("blue") right_branding();
+up(branding_cut+shield) rotate([0, 180, -90]) color("blue") right_branding();
+
+// transparent text shield
+color("#ffffff44")
+difference() {
+	union() {
+		color("blue")
+		right(layer) back(layer) linear_extrude(layer)
+		rounded_rect(overall_height-layer*2, overall_length-layer*2, outer_radius);
+
+		color("red")
+		up(layer) linear_extrude(shield-layer)
+		rounded_rect(overall_height, overall_length, outer_radius);
+	}
+
+	down(0.005) zcopies(0.01)
+	rotate([0, 90, 0]) {
+		right_cutouts();
+	}
+}
