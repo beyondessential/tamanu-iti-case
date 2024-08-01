@@ -496,8 +496,15 @@ up(branding_cut+shield) rotate([0, 180, -90]) color("blue") right_branding();
 // transparent text shield
 color("#ffffff44")
 difference() {
-	linear_extrude(layer * 2)
-	rounded_rect(overall_height, overall_length, outer_radius);
+	union() {
+		color("blue")
+		right(layer) back(layer) linear_extrude(layer)
+		rounded_rect(overall_height-layer*2, overall_length-layer*2, outer_radius);
+
+		color("red")
+		up(layer) linear_extrude(shield-layer)
+		rounded_rect(overall_height, overall_length, outer_radius);
+	}
 
 	down(0.005) zcopies(0.01)
 	rotate([0, 90, 0]) {
