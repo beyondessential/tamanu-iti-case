@@ -17,6 +17,8 @@ This is the current production version.
   - [Light pipes](./v3/renders/light-pipes.stl)
 - [Lid](./v3/renders/lid.stl)
   - [Text inlay](./v3/renders/right-text-inlay.stl)
+  - [Shield](./v3/renders/text-shield.stl)
+  - print on a smooth plate and omit glue
 - [Spacer](./v3/renders/cell-cover.stl)
 
 <!-- ![Photo of the 3D printed and fully assembled case](./v3/renders/assembled.jpg) -->
