@@ -44,7 +44,7 @@ overall_length = inner_length + wall * 2;
 x1001_length = 24;
 x1001_slots_extra_y = 1;   // extra length either side
 x1001_slots_extra_z = 0.15; // extra height either side
-x1001_pcb_slot_depth = wall - 1;
+x1001_pcb_slot_depth = wall - 0.4;
 x1001_edge_to_m2 = 0.9;
 x1001_m2_slot_depth = x1001_pcb_slot_depth - x1001_edge_to_m2;
 
@@ -110,7 +110,7 @@ module outer_casing() {
 			rounding=outer_radius,
 			except=[RIGHT]
 		);
-		
+
 		right(wall/2)
 		cuboid(
 			[inner_width + 0.01, inner_length, inner_height],
@@ -216,14 +216,14 @@ module south_cutouts() { translate([0, -wall, 0]) {
 	hdmi_dip_width = 12;
 	hdmi_dip_height = 8;
 	hdmi_dip_r = 3;
-	
+
 	for (hdmi_offset = [25.8, 39.2]) {
 		left_of_hdmi = rpi_left_of_board + (hdmi_offset - hdmi_width/2);
 		translate([left_of_hdmi, 0, cutouts_bottom])
 		rotate([90, 0, 0]) {
 			linear_extrude(cutouts_thick)
 			rounded_rect(hdmi_width, hdmi_height, cutouts_radius);
-			
+
 			translate([
 				(hdmi_width - hdmi_dip_width)/2,
 				(hdmi_height - hdmi_dip_height)/2,
@@ -231,7 +231,7 @@ module south_cutouts() { translate([0, -wall, 0]) {
 			])
 			linear_extrude(cutouts_thick)
 			rounded_rect(hdmi_dip_width, hdmi_dip_height, hdmi_dip_r);
-			
+
 			translate([
 				(hdmi_width - hdmi_dip_width)/2,
 				(hdmi_height - hdmi_dip_height)/2,
@@ -257,7 +257,7 @@ module south_cutouts() { translate([0, -wall, 0]) {
 		])
 		linear_extrude(cutouts_thick)
 		rounded_rect(usb_c_dip_width, usb_c_dip_height, usb_c_dip_r);
-		
+
 		translate([
 			(usb_c_width - usb_c_dip_width)/2,
 			(usb_c_height - usb_c_dip_height)/2,
@@ -280,7 +280,7 @@ module south_cutouts() { translate([0, -wall, 0]) {
 	air_offset_start = overall_width*0.1 + wall;
 	air_offset_end = overall_width*0.9 + wall;
 	air_offset_gap = 3;
-	
+
 	air_height = 2*overall_height/7;
 	air_width = 2;
 	air_bottom2 = overall_height/7;
@@ -355,7 +355,7 @@ module left_cutouts() {
 
 module right_cutouts() {
 	offset_correction = 0.5;
-	
+
 	rj_width = 16.5;
 	rj_height = 14.5;
 	rj_offset = 10.2 + offset_correction;
@@ -366,7 +366,7 @@ module right_cutouts() {
 	rotate([0, 0, 90])
 	linear_extrude(cutouts_thick)
 	square([rj_width, rj_height]);
-	
+
 	usb_a_width = 15;
 	usb_a_height = 17;
 	usb_a1_offset = 29.1 + offset_correction;
