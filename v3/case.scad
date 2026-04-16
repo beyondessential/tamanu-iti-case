@@ -92,10 +92,10 @@ module right_branding() {
 	translate([0, 34]) {
 		font = "FiraCode:style=Bold";
 		text("TAMANU ITI", size = 4.5, font=font, halign = "right");
-		translate([0, -4.5]) text("2024 ♥ BES", size = 3.5, font=font, halign = "right");
+		translate([0, -4.5]) text("2026 ♥ BES", size = 3.5, font=font, halign = "right");
 		translate([0, -10.5]) text("RATING 5▪1V=5A", size = 3, font=font, halign = "right");
 		translate([0, -14.5]) text("BATTERY Li-ion", size = 3, font=font, halign = "right");
-		translate([0, -18.5]) text("3▪6V 6360mAh", size = 3, font=font, halign = "right");
+		translate([0, -18.5]) text("3▪6V 6600mAh", size = 3, font=font, halign = "right");
 		translate([0, -26]) text("w w w.bes.au", size = 4, font=font, halign = "right");
 		translate([0, -31]) text("made in  aotearoa", size = 2.6, font=font, halign = "right");
 		translate([0, -34.5]) text("new zealand", size = 2.6, font=font, halign = "right");
