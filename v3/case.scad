@@ -5,6 +5,7 @@ include <../vendor/RaspberryPi5.scad>;
 // length = along y axis
 // height = along z axis
 
+zz = 0.01;
 layer = 0.2;
 
 rpi_width = 85;
@@ -408,11 +409,11 @@ module right_cutouts() {
 
 
 // light-pipes
-color("silver")
+*color("silver")
 translate([0, 0, overall_width - wall]) rotate([0, 90, 0]) left_leds();
 
 // main-body
-translate([0, 0, overall_width]) rotate([0, 90, 0]) {
+*translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	// main body
 	color("white")
 	difference() {
@@ -430,7 +431,7 @@ translate([0, 0, overall_width]) rotate([0, 90, 0]) {
 	}
 
 	// for reference only
-	#translate([rpi_left_of_board, rpi_south_of_board, rpi_bottom_of_board])
+	*translate([rpi_left_of_board, rpi_south_of_board, rpi_bottom_of_board])
 	translate([rpi_width/2, rpi_length/2, 0]) // bring board to 0,0,0
 	rpi5();
 }
@@ -452,41 +453,40 @@ up(shield) union() {
 		}
 	}
 
-	// TODO: parametrise these from ssd, pcb, etc dimensions
-	south_lip = 24;
-	north_lip = 30;
 	top_right_lip = 8;
 	top_left_lip = 55;
-	bottom_lip = 65;
+	bottom_lip = 50;
+	bottom_lip_y = 15;
 	bottom_lip_h = 1.5;
+	
+	tie_sides = 1.85;
+	tie_wide = rpi_hole_d + tie_sides*2;
+	tie_tall = overall_width - rpi_hole_offset_right + rpi_hole_d/2 + tie_sides - wall*2;
+	
+	anch=[-1,-1,-1];
 
 	up(wall-shield) {
-		anch=[-1,-1,-1];
-		translate([overall_height - south_lip - wall, wall]) cuboid([south_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
-		translate([overall_height - north_lip - wall, overall_length - wall*2]) cuboid([north_lip, wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
-		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cuboid([wall, top_right_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
-		translate([overall_height - wall*2, wall]) cuboid([wall, top_left_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
-		translate([wall, wall]) cuboid([bottom_lip_h, bottom_lip, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, overall_length - top_right_lip - wall]) cuboid([wall, top_right_lip - wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		translate([overall_height - wall*2, wall*2]) cuboid([wall, top_left_lip-wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		*translate([wall, wall*2]) cuboid([bottom_lip_h, bottom_lip-wall, wall], anchor=anch, rounding=0.5, except=[BOTTOM]);
+		
 	}
 
 	// tie
 	difference() {
-		tie_sides = 5;
-		translate([
-			wall,
-			rpi_south_of_board + rpi_hole_offset_north - tie_sides - rpi_hole_d/2,
-			wall,
-		]) cube([
-			bottom_lip_h,
-			rpi_hole_d + tie_sides*2,
-			overall_width - rpi_hole_offset_right + rpi_hole_d/2 + tie_sides - wall*2,
-		]);
+		up(wall-shield) translate([wall, wall*2+bottom_lip_y]) prismoid(
+			size1=[bottom_lip_h, bottom_lip-wall],
+			size2=[bottom_lip_h, tie_wide],
+			h=tie_tall,
+			shift=[0, tie_wide*2],
+			anchor=anch, rounding=0.5
+		);
 
 		rotate([0, -90]) translate([
 			overall_width - rpi_hole_offset_right - wall,
 			rpi_south_of_board + rpi_hole_offset_north,
 			-wall*2
-		]) cylinder(d = rpi_hole_d, h = wall);
+		]) up(zz) cylinder(d = rpi_hole_d, h = wall+zz*2);
 	}
 }
 
