@@ -195,6 +195,95 @@ module base_solid() {
 module lid()  { color(lid_color)  difference() { lid_solid();  lid_cutters(); } }
 module base() { color(base_color) difference() { base_solid(); base_cutters(); } }
 
-if (part == "base") base();
+// ---- keepout / sticker zones (thin slabs standing 0.4 mm proud of each face, for the viewer) ----
+/* [Zones] */
+km        = 3;     // margin kept clear around holes and vents
+edge_m    = 2.5;   // width of the "don't wrap over the edge" band round each face
+free_edge = 4;     // suggested sticker areas stay this far from edges
+screw_zone_d = 8;  // zone drawn round a screw head
+function vent_extent(n) = (n - 1) * vent_pitch + vent_w;   // size of a vent patch across its columns
+
+// face-local 2D (u,v) -> 3D slab on the outside of a face. top/bottom: u=X v=Y; rear/front: u=X v=Z; A/B: u=Y v=Z
+module face_extrude(face, h=0.4) {
+    if (face == "top")         translate([0, 0, hgt + 0.02]) linear_extrude(h) children();
+    else if (face == "bottom") translate([0, 0, -0.02 - h]) linear_extrude(h) children();
+    else if (face == "rear")   translate([0, -wy/2 - 0.02, 0]) rotate([90, 0, 0]) linear_extrude(h) children();
+    else if (face == "front")  translate([0, wy/2 + 0.02 + h, 0]) rotate([90, 0, 0]) linear_extrude(h) children();
+    else if (face == "A")      translate([-wx/2 - 0.02 - h, 0, 0]) rotate([90, 0, 90]) linear_extrude(h) children();
+    else if (face == "B")      translate([wx/2 + 0.02, 0, 0]) rotate([90, 0, 90]) linear_extrude(h) children();
+}
+module rect2(u0, u1, v0, v1) translate([(u0+u1)/2, (v0+v1)/2]) square([u1-u0, v1-v0], center=true);
+module circ2(u, v, d) translate([u, v]) circle(d=d);
+module frame2(w, h, vc=0) translate([0, vc]) difference() { square([w, h], center=true); square([w - 2*edge_m, h - 2*edge_m], center=true); }
+module vent_rect2(uc, vc, ncols) rect2(uc - vent_total()/2 - km, uc + vent_total()/2 + km, vc - vent_extent(ncols)/2 - km, vc + vent_extent(ncols)/2 + km);
+module hole_rect2(u, v, w, h) rect2(u - w/2 - km, u + w/2 + km, v - h/2 - km, v + h/2 + km);
+
+y_seam = wy/2 - t - flange_w - strip_gap;   // where the lid's top plate ends, in front of the rear flange
+
+// kind: "hard" (keep clear), "soft" (avoid), "free" (suggested sticker area); owner: "lid" or "base"
+module zones(kind, owner) {
+    if (kind == "hard" && owner == "lid") {
+        face_extrude("top") vent_rect2(0, top_patch[0], top_patch[1]);
+        face_extrude("rear") {
+            for (p = [eth, usb3, usb2]) hole_rect2(p[0], port_z, p[1], p[2]);
+            hole_rect2(usbc_in[0], port_z + 2, usbc_in[1], usbc_in[2]);
+        }
+    }
+    if (kind == "hard" && owner == "base") {
+        face_extrude("front") {
+            vent_rect2(rr_region[0], rr_region[2], rr_region[1]);
+            hole_rect2(rr_tf[0], rr_tf[3], rr_tf[1], rr_tf[2]);
+            circ2(rr_led[0], rr_led[2], rr_led[1] + 2*km);
+            circ2(rr_btn[0], rr_btn[2], rr_btn[1] + 2*km);
+        }
+        face_extrude("A") {
+            vent_rect2(sa_region[0], sa_region[2], sa_region[1]);
+            hole_rect2(sa_usbc[0], sa_usbc[3], sa_usbc[1], sa_usbc[2]);
+            for (h = sa_hdmi) hole_rect2(h[0], h[3], h[1], h[2]);
+        }
+        face_extrude("B") vent_rect2(sb_region[0], sb_region[2], sb_region[1]);
+        face_extrude("bottom") {
+            rect2(bot_slot_x[0] - bot_slot_w/2 - km, bot_slot_x[6] + bot_slot_w/2 + km, bot_slot_y - bot_slot_len/2 - km, bot_slot_y + bot_slot_len/2 + km);
+            rect2(bot_slot_x[7] - bot_slot_w/2 - km, bot_slot_x[9] + bot_slot_w/2 + km, bot_slot_y - bot_slot_len/2 - km, bot_slot_y + bot_slot_len/2 + km);
+            for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);
+            for (h = bot_hole_xy) circ2(h[0], h[1], bot_hole_d + 2*km);
+        }
+    }
+    if (kind == "soft" && owner == "lid") {
+        face_extrude("top") { frame2(wx, wy); rect2(-wx/2, wx/2, y_seam - 1.5, y_seam + 1.5); }
+        face_extrude("rear") {
+            frame2(wx, hgt, hgt/2);
+            for (sx = [-1, 1], z = [screw_z_in, hgt - screw_in - 1]) circ2(sx*(wx/2 - screw_in), z, screw_zone_d);
+        }
+    }
+    if (kind == "soft" && owner == "base") {
+        face_extrude("bottom") {
+            frame2(wx, wy);
+            for (x = screw_x, y = screw_y) circ2(x, y, screw_zone_d);
+            for (sx = [-1, 1], sy = [-1, 1]) circ2(sx*foot_xy[0], sy*foot_xy[1], foot_d + 3);
+        }
+        face_extrude("front") frame2(wx, hgt, hgt/2);
+        for (f = ["A", "B"]) face_extrude(f) {
+            frame2(wy, hgt, hgt/2);
+            rect2(-wy/2, wy/2, hgt - 2.5, hgt);                 // seam where the lid plate meets the side wall
+            rect2(-wy/2, -wy/2 + t + 1.5, 0, hgt);              // seam where the lid's rear face meets the side wall
+        }
+    }
+    if (kind == "free" && owner == "lid") {
+        face_extrude("top") rect2(-wx/2 + free_edge, wx/2 - free_edge, -wy/2 + free_edge, top_patch[0] - vent_extent(top_patch[1])/2 - km);
+        face_extrude("rear") rect2(-37, 37, free_edge, port_z - 8 - km);
+    }
+    if (kind == "free" && owner == "base") {
+        face_extrude("B") rect2(-wy/2 + free_edge + 2, wy/2 - free_edge, free_edge, sb_region[2] - vent_extent(sb_region[1])/2 - km);
+        face_extrude("A") rect2(-wy/2 + free_edge + 2, wy/2 - free_edge, free_edge, sa_usbc[3] - sa_usbc[2]/2 - km);
+        face_extrude("front") rect2(8, wx/2 - free_edge, rr_region[2] + vent_extent(rr_region[1])/2 + km, hgt - free_edge);
+    }
+}
+
+if (len(part) > 2 && part[0] == "z") {   // part = "z_<kind>_<owner>", e.g. z_hard_lid
+    zones(part == "z_hard_lid" || part == "z_hard_base" ? "hard" : (part == "z_soft_lid" || part == "z_soft_base" ? "soft" : "free"),
+          (part == "z_hard_lid" || part == "z_soft_lid" || part == "z_free_lid") ? "lid" : "base");
+}
+else if (part == "base") base();
 else if (part == "lid") lid();
 else { base(); up(explode) lid(); }

@@ -12,6 +12,12 @@ h1{font-size:15px;margin:0 0 4px}p{margin:4px 0;font-size:12px;opacity:.85}
 label{display:flex;align-items:center;gap:8px;margin:6px 0}
 .sw{width:12px;height:12px;border-radius:3px;border:1px solid var(--line)}
 input[type=range]{width:100%}
+h2{font-size:12px;margin:10px 0 2px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+button.on{background:var(--fg);color:var(--bg)}
+.lbl{position:fixed;pointer-events:none;transform:translate(-50%,-130%);padding:2px 6px;border-radius:4px;background:var(--panel);border:1px solid var(--line);font-size:12px;white-space:nowrap}
+.lbl small{opacity:.7;margin-left:4px}
+#v.meas{cursor:crosshair}
+.panel{max-height:calc(100vh - 56px);overflow:auto}
 button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:5px;cursor:pointer}
 </style></head><body>
 <div id="v"></div>
@@ -21,11 +27,19 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid (top plate + rear / port face)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Rear (ports)</button><button data-v="rear">Front (button)</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
+  <h2>Zones</h2>
+  <label><input type="checkbox" id="zh" checked><span class="sw" style="background:#e5484d"></span>Keep clear: vents, ports, button, slots</label>
+  <label><input type="checkbox" id="zs" checked><span class="sw" style="background:#f5a524"></span>Avoid: screws, feet, seams, edges</label>
+  <label><input type="checkbox" id="zf" checked><span class="sw" style="background:#30a46c"></span>Suggested sticker areas</label>
+  <h2>Measure</h2>
+  <div><button id="mm">Measure</button><button id="mc">Clear</button></div>
+  <label><input type="checkbox" id="snap" checked>Snap to corners / hole edges</label>
+  <p id="mhelp">Click two points on the case. Distances are along the case axes in mm (set Explode to 0).</p>
   <p>Rear = ports (Ethernet/USB, UPS USB-C). Front = power button, SD slot, LED. Side A = Pi USB-C + HDMI. Drag to rotate freely (any angle), scroll to zoom, right-drag to pan.</p>
 </div>
 <script>/*__THREE__*/</script>
 <script>
-const DATA={base:"__BASE__",lid:"__LID__"};
+const DATA={base:"__BASE__",lid:"__LID__"}, ZONES=__ZONES__;
 const el=document.getElementById('v');
 const R=new THREE.WebGLRenderer({antialias:true,alpha:true});
 R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
@@ -56,6 +70,63 @@ function load(b64,color){
 }
 const base=load(DATA.base,0x8aa4c0), lid=load(DATA.lid,0xe1e4e8);
 const $=id=>document.getElementById(id);
+// ---- keepout zones: translucent overlays; lid zones ride with the lid when exploded ----
+const ZCOL={hard:0xe5484d,soft:0xf5a524,free:0x30a46c}, zones={hard:[],soft:[],free:[]};
+for(const k of ['hard','soft','free'])for(const o of ['lid','base']){
+  const bin=Uint8Array.from(atob(ZONES[k+'_'+o]),c=>c.charCodeAt(0));
+  const g=new THREE.STLLoader().parse(bin.buffer);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:ZCOL[k],transparent:true,opacity:k==='soft'?.4:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,side:THREE.DoubleSide}));
+  (o==='lid'?lid:base).add(m);zones[k].push(m);
+}
+$('zh').onchange=e=>zones.hard.forEach(m=>m.visible=e.target.checked);
+$('zs').onchange=e=>zones.soft.forEach(m=>m.visible=e.target.checked);
+$('zf').onchange=e=>zones.free.forEach(m=>m.visible=e.target.checked);
+// ---- measurement: click two points; snaps to the nearest vertex of the clicked triangle ----
+const ray=new THREE.Raycaster(), meas=[], overlay=[]; let pending=null, measuring=false;
+const dot=()=>new THREE.Mesh(new THREE.SphereGeometry(0.9,12,8),new THREE.MeshBasicMaterial({color:0x2f6fed,depthTest:false}));
+function pick(ev){
+  const r=R.domElement.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),cam);
+  const hit=ray.intersectObjects([base,lid].filter(m=>m.visible),false)[0]; if(!hit)return null;
+  const mesh=hit.object, local=mesh.worldToLocal(hit.point.clone());
+  if($('snap').checked&&!ev.shiftKey){
+    const pos=mesh.geometry.attributes.position; let best=null,bd=2.5;
+    for(const i of [hit.face.a,hit.face.b,hit.face.c]){const v=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)),dd=v.distanceTo(local);if(dd<bd){bd=dd;best=v;}}
+    if(best)local.copy(best);
+  }
+  return {mesh,local};
+}
+function marker(pt){const m=dot();m.position.copy(pt.local);m.renderOrder=10;pt.mesh.add(m);overlay.push(m);return m;}
+const world=pt=>pt.mesh.localToWorld(pt.local.clone());
+function addMeasure(a,b){
+  const g=new THREE.BufferGeometry().setFromPoints([world(a),world(b)]);
+  const line=new THREE.Line(g,new THREE.LineBasicMaterial({color:0x2f6fed,depthTest:false}));line.renderOrder=9;S.add(line);
+  const div=document.createElement('div');div.className='lbl';document.body.appendChild(div);
+  const d=b.local.clone().sub(a.local), f=x=>Math.abs(x).toFixed(1);
+  div.innerHTML='<b>'+d.length().toFixed(1)+' mm</b><small>X '+f(d.x)+' · Y '+f(d.y)+' · Z '+f(d.z)+'</small>';
+  meas.push({a,b,line,div});
+}
+function setMode(on){measuring=on;$('mm').classList.toggle('on',on);el.classList.toggle('meas',on);if(!on&&pending){pending.m.parent.remove(pending.m);pending=null;}}
+$('mm').onclick=()=>setMode(!measuring);
+$('mc').onclick=()=>{meas.forEach(m=>{S.remove(m.line);m.div.remove();});meas.length=0;overlay.forEach(m=>m.parent&&m.parent.remove(m));overlay.length=0;pending=null;};
+addEventListener('keydown',e=>{if(e.key==='Escape')setMode(false);});
+let down=null;
+R.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+R.domElement.addEventListener('pointerup',e=>{
+  if(!measuring||!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>4||e.button!==0)return;
+  const pt=pick(e); if(!pt)return;
+  if(!pending){pending={...pt,m:marker(pt)};}
+  else{marker(pt);addMeasure(pending,pt);pending=null;}
+});
+function updateMeasure(){
+  for(const m of meas){
+    const p=m.line.geometry.attributes.position, a=world(m.a), b=world(m.b);
+    p.setXYZ(0,a.x,a.y,a.z);p.setXYZ(1,b.x,b.y,b.z);p.needsUpdate=true;
+    const mid=a.clone().add(b).multiplyScalar(.5).project(cam);
+    m.div.style.display=mid.z<1?'block':'none';
+    m.div.style.left=((mid.x+1)/2*innerWidth)+'px';m.div.style.top=((1-mid.y)/2*innerHeight)+'px';
+  }
+}
 $('b').onchange=e=>base.visible=e.target.checked;
 $('l').onchange=e=>lid.visible=e.target.checked;
 $('e').oninput=e=>lid.position.z=+e.target.value;
@@ -67,5 +138,5 @@ document.querySelectorAll('button[data-v]').forEach(b=>b.onclick=()=>setView(b.d
 setView('port');cam.position.add(new THREE.Vector3(120,-40,60));cam.lookAt(C.target);
 function size(){R.setSize(innerWidth,innerHeight);C.handleResize();cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
-(function loop(){requestAnimationFrame(loop);C.update();R.render(S,cam);})();
+(function loop(){requestAnimationFrame(loop);C.update();updateMeasure();R.render(S,cam);})();
 </script></body></html>
