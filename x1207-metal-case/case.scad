@@ -58,15 +58,16 @@ usbc_in  = [ 17.2, 10, 4];         // UPS USB-C power in
 screw_d  = 3; screw_in = 4; screw_z_in = 4.5;  // corner screws: inset from the face edges
 
 /* [Side A, -X: connectors at the rear end] */
-sa_usbc = [33.2, 10, 4, 21];       // [y, w, h, z] Pi USB-C (do not power from it)
-sa_hdmi = [[18.4, 7, 4, 21], [4.9, 7, 4, 21]];
-sa_region = [-8, 70, 2, hgt - 10]; // staggered vents [centre y, length, rows, z of first row]
+sa_usbc = [33.2, 10, 4, 19];       // [y, w, h, z] Pi USB-C (do not power from it)
+sa_hdmi = [[18.4, 7, 4, 19], [4.9, 7, 4, 19]];
+sa_region = [4, 68, 2, hgt - 10]; // staggered vents [centre y, length, rows, z of first row]
 
 /* [Rear, +Y: Pi microSD end] */
-rr_led = [-37, 2.2, 21];           // SSD LED hole [x, d, z]
-rr_tf  = [-26, 12, 2.5, 21];       // TF slot [x, w, h, z]
-rr_btn = [-3, 5, 33];              // power button hole [x, d, z]
-rr_region = [18, 50, 3, 24];       // staggered vents [centre x, length, rows, z of first row]
+// positions read off the labelled wiki photo (case upside down): z counts up from the bottom plate
+rr_led = [[-36.6, 2.5, 16], [-33.5, 2, 12]];   // SSD LED hole + a small neighbour [x, d, z]
+rr_tf  = [-21, 13, 3.2, 12];       // TF slot [x, w, h, z] (obround)
+rr_btn = [-4.1, 5.5, 35.7];        // power button hole [x, d, z]
+rr_region = [-7.5, 66, 2, 24.5];   // staggered vents [centre x, length, rows, z of row centre]
 
 /* [Side B, +X: vents only] */
 sb_region = [0, 70, 4, hgt - 8];
@@ -126,8 +127,8 @@ module base_cutters() {
     // side B: vents
     wallx(1, sb_region[0], 0) wall_pattern([0, sb_region[1], sb_region[2], sb_region[3]], side_L, side_gap, side_w);
     // rear: LED, TF, button, vents
-    wally(1, rr_led[0], rr_led[2]) circle(d=rr_led[1]);
-    wally(1, rr_tf[0], rr_tf[3]) square([rr_tf[1], rr_tf[2]], center=true);
+    for (l = rr_led) wally(1, l[0], l[2]) circle(d=l[1]);
+    wally(1, rr_tf[0], rr_tf[3]) obround2d(rr_tf[1], rr_tf[2]);
     wally(1, rr_btn[0], rr_btn[2]) circle(d=rr_btn[1]);
     wally(1, rr_region[0], 0) wall_pattern([0, rr_region[1], rr_region[2], rr_region[3]], side_L, side_gap, side_w);
 }
