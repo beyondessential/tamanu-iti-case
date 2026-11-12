@@ -8,7 +8,10 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px system-ui,sans-serif}
 #v{position:fixed;inset:0}
 .panel{position:fixed;left:16px;top:16px;max-width:300px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;backdrop-filter:blur(4px)}
-h1{font-size:15px;margin:0 0 4px}p{margin:4px 0;font-size:12px;opacity:.85}
+h1{font-size:15px;margin:0}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.phead button{margin:0}
+#pbody[hidden]{display:none}p{margin:4px 0;font-size:12px;opacity:.85}
 label{display:flex;align-items:center;gap:8px;margin:6px 0}
 .sw{width:12px;height:12px;border-radius:3px;border:1px solid var(--line)}
 input[type=range]{width:100%}
@@ -19,10 +22,12 @@ button.on{background:var(--fg);color:var(--bg)}
 #v.meas{cursor:crosshair}
 .panel{max-height:calc(100vh - 56px);overflow:auto}
 button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:5px;cursor:pointer}
+@media (max-width:600px){.panel{left:12px;right:12px;max-width:none;top:auto;bottom:12px;max-height:60vh}}
 </style></head><body>
 <div id="v"></div>
 <div class="panel">
-  <h1>Tamanu Iti v4 case</h1>
+  <div class="phead"><h1>Tamanu Iti v4 case</h1><button id="pt" aria-expanded="true">Hide</button></div>
+  <div id="pbody">
   <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base</label>
   <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid</label>
   <label><span class="sw" style="background:#00c8d7"></span>Power button</label>
@@ -40,13 +45,14 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><input type="checkbox" id="snap" checked>Snap to corners / hole edges</label>
   <p id="mhelp">Click two points on the case. Distances are along the case axes in mm.</p>
   <p>Rear = ports. Front = power button, SD slot, LED. Side A = Pi USB-C + HDMI. Drag to rotate freely, scroll to zoom, right-drag to pan.</p>
+  </div>
 </div>
 <script>/*__THREE__*/</script>
 <script>
 const DATA={base:"__BASE__",lid:"__LID__",button:"__BUTTON__"}, ZONES=__ZONES__;
 const el=document.getElementById('v');
 const R=new THREE.WebGLRenderer({antialias:true,alpha:true});
-R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
+R.setPixelRatio(Math.min(devicePixelRatio,2));el.appendChild(R.domElement);
 const S=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(35,1,1,2000);
 const C=new THREE.TrackballControls(cam,R.domElement);
@@ -98,6 +104,10 @@ function load(b64,color){
 }
 const base=load(DATA.base,0x8aa4c0), lid=load(DATA.lid,0xe1e4e8);
 const $=id=>document.getElementById(id);
+const pt=$('pt'), pb=$('pbody');
+function setPanel(open){pb.hidden=!open;pt.textContent=open?'Hide':'Show controls';pt.setAttribute('aria-expanded',String(open));}
+pt.onclick=()=>setPanel(pb.hidden);
+setPanel(!matchMedia('(max-width:600px)').matches);   // collapsed by default on small screens
 $('real').onchange=e=>{for(const m of [base,lid]){m.material=e.target.checked?m.userData.real:m.userData.std;m.geometry.setAttribute('color',e.target.checked?m.userData.colReal:m.userData.colStd);}
   btnMesh.material=e.target.checked?btnMesh.userData.real:btnMesh.userData.std;
   if(e.target.checked){for(const k in zbox)zbox[k].checked=false;syncZones();}   // zones off in real-colour mode; they can be switched back on
@@ -195,12 +205,21 @@ $('b').onchange=e=>base.visible=e.target.checked;
 $('l').onchange=e=>lid.visible=e.target.checked;
 $('e').oninput=e=>lid.position.z=+e.target.value;
 const views={port:[0,-1,.35],rear:[0,1,.35],a:[-1,0,.35],b:[1,0,.35],top:[0,-.001,1],bot:[0,-.001,-1]};
-function setView(k){const v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260);
+function setView(k){const fit=Math.max(1,0.7/(innerWidth/innerHeight)),v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260*fit);
   cam.up.set(0,0,1);if(k==='top'||k==='bot')cam.up.set(0,1,0);
   C.target.set(0,0,21);cam.position.set(v.x,v.y,21+v.z);cam.lookAt(C.target);C.update();}
 document.querySelectorAll('button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
-setView('port');cam.position.add(new THREE.Vector3(120,-40,60));cam.lookAt(C.target);
+setView('port');cam.position.add(new THREE.Vector3(120,-40,60).multiplyScalar(Math.max(1,0.7/(innerWidth/innerHeight))));cam.lookAt(C.target);
 function size(){R.setSize(innerWidth,innerHeight);C.handleResize();cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
-(function loop(){requestAnimationFrame(loop);C.update();updateMeasure();updateDims();R.render(S,cam);})();
+// Render on demand: the loop only runs while something is changing, then stops, so an idle page uses no CPU or GPU.
+let running=false, quiet=0;
+function frame(){
+  C.update();updateMeasure();updateDims();R.render(S,cam);
+  if(++quiet<20)requestAnimationFrame(frame);else running=false;
+}
+function wake(){quiet=0;if(!running){running=true;requestAnimationFrame(frame);}}
+C.addEventListener('change',wake);C.addEventListener('start',wake);C.addEventListener('end',wake);
+for(const t of ['pointerdown','pointermove','pointerup','wheel','touchstart','touchmove','keydown','input','change','click','resize'])addEventListener(t,wake,{passive:true});
+wake();
 </script></body></html>
