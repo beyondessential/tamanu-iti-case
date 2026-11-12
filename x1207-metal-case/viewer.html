@@ -23,12 +23,12 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
 <div id="v"></div>
 <div class="panel">
   <h1>Tamanu Iti v4 case</h1>
-  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base: bottom, front and side walls</label>
-  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid: top plate and rear port face</label>
-  <label><span class="sw" style="background:#00c8d7"></span>Power button, 3 mm proud</label>
+  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base</label>
+  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid</label>
+  <label><span class="sw" style="background:#00c8d7"></span>Power button</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
-  <div><button data-v="port">Rear ports</button><button data-v="rear">Front button</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
-  <label><input type="checkbox" id="real">Real colours, black and textured</label>
+  <div><button data-v="port">Rear</button><button data-v="rear">Front</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
+  <label><input type="checkbox" id="real">Real colours</label>
   <h2>Zones</h2>
   <label><input type="checkbox" id="za" checked><b>All zones</b></label>
   <label><input type="checkbox" id="zh" checked><span class="sw" style="background:#e5484d"></span>Keep clear: vents, ports, button, LED, lid seam</label>
@@ -38,8 +38,8 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <div><button id="mm">Measure</button><button id="mc">Clear</button></div>
   <label><input type="checkbox" id="dims">Show overall dimensions</label>
   <label><input type="checkbox" id="snap" checked>Snap to corners / hole edges</label>
-  <p id="mhelp">Click two points on the case. Distances are along the case axes in mm. Set Explode to 0 for true distances.</p>
-  <p>Rear has the Ethernet, USB and UPS USB-C ports. Front has the power button, SD slot and LED. Side A has the Pi USB-C and HDMI. Drag to rotate freely at any angle, scroll to zoom, right-drag to pan.</p>
+  <p id="mhelp">Click two points on the case. Distances are along the case axes in mm.</p>
+  <p>Rear = ports. Front = power button, SD slot, LED. Side A = Pi USB-C + HDMI. Drag to rotate freely, scroll to zoom, right-drag to pan.</p>
 </div>
 <script>/**
  * @license
