@@ -1135,7 +1135,7 @@ R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
 const S=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(35,1,1,2000);
 const C=new THREE.TrackballControls(cam,R.domElement);
-C.rotateSpeed=3;C.zoomSpeed=1.2;C.panSpeed=0.8;C.dynamicDampingFactor=0.12;C.noRoll=false;
+C.rotateSpeed=3;C.zoomSpeed=1.2;C.panSpeed=0.8;C.staticMoving=true;C.noRoll=false;
 S.add(new THREE.HemisphereLight(0xffffff,0x667788,.9));
 const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);
 // STL is Z-up; use a Z-up scene
