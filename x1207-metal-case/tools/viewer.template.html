@@ -28,6 +28,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><span class="sw" style="background:#00c8d7"></span>Power button (sticks out 3 mm)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Rear (ports)</button><button data-v="rear">Front (button)</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
+  <label><input type="checkbox" id="real">Real colours (black, textured)</label>
   <h2>Zones</h2>
   <label><input type="checkbox" id="za" checked><b>All zones</b></label>
   <label><input type="checkbox" id="zh" checked><span class="sw" style="background:#e5484d"></span>Keep clear: vents, ports, button, LED, lid seam</label>
@@ -50,29 +51,55 @@ const S=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(35,1,1,2000);
 const C=new THREE.TrackballControls(cam,R.domElement);
 C.rotateSpeed=3;C.zoomSpeed=1.2;C.panSpeed=0.8;C.staticMoving=true;C.noRoll=false;
-S.add(new THREE.HemisphereLight(0xffffff,0x667788,.9));
-const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);
+const hemi=new THREE.HemisphereLight(0xffffff,0x667788,.9);S.add(hemi);
+const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);const key=d;
+const rim=new THREE.DirectionalLight(0xffffff,.5);rim.position.set(-200,150,120);S.add(rim);
 // STL is Z-up; use a Z-up scene
 cam.up.set(0,0,1);
+// 'Real colours': near-black powder-coat look. A speckle texture drives both bump and roughness so the
+// surface sparkles slightly under the lights, like textured PEI.
+let grainTex=null;
+function realMaterial(){
+  if(!grainTex){
+    const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d'),d=x.createImageData(256,256);
+    for(let i=0;i<d.data.length;i+=4){const v=135+Math.random()*70;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}
+    x.putImageData(d,0,0);grainTex=new THREE.CanvasTexture(c);grainTex.wrapS=grainTex.wrapT=THREE.RepeatWrapping;grainTex.anisotropy=4;
+  }
+  return new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:.2,roughnessMap:grainTex,bumpMap:grainTex,bumpScale:.7,side:THREE.DoubleSide});
+}
 // Outside surfaces take the part colour; inside surfaces (anything inside the outer skin) are dark.
-const DIM=__DIM__, INNER=new THREE.Color(0x1b2129);
+const UV_MM=60, DIM=__DIM__, INNER=new THREE.Color(0x1b2129);
 function load(b64,color){
   const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
   const g=new THREE.STLLoader().parse(bin.buffer);g.computeVertexNormals();
-  const pos=g.attributes.position, col=new Float32Array(pos.count*3), out=new THREE.Color(color), e=0.3;
+  const pos=g.attributes.position, col=new Float32Array(pos.count*3), colR=new Float32Array(pos.count*3), out=new THREE.Color(color), e=0.3, REAL_OUT=new THREE.Color(0x24272c), REAL_IN=new THREE.Color(0x060607);
   const lx=DIM.wx/2-e, ly=DIM.wy/2-e, zlo=e, zhi=DIM.hgt-e;
   for(let i=0;i<pos.count;i+=3){
     const cx=(pos.getX(i)+pos.getX(i+1)+pos.getX(i+2))/3, cy=(pos.getY(i)+pos.getY(i+1)+pos.getY(i+2))/3, cz=(pos.getZ(i)+pos.getZ(i+1)+pos.getZ(i+2))/3;
     const inner=Math.abs(cx)<lx&&Math.abs(cy)<ly&&cz>zlo&&cz<zhi;
     const c=inner?INNER:out;
-    for(let k=0;k<3;k++){col[(i+k)*3]=c.r;col[(i+k)*3+1]=c.g;col[(i+k)*3+2]=c.b;}
+    const cr=inner?REAL_IN:REAL_OUT;
+    for(let k=0;k<3;k++){col[(i+k)*3]=c.r;col[(i+k)*3+1]=c.g;col[(i+k)*3+2]=c.b;colR[(i+k)*3]=cr.r;colR[(i+k)*3+1]=cr.g;colR[(i+k)*3+2]=cr.b;}
   }
   g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  // box-projected UVs (1 unit = UV_MM millimetres) so the grain texture can be applied to a bare STL
+  const uv=new Float32Array(pos.count*2);
+  for(let i=0;i<pos.count;i+=3){
+    const ax=pos.getX(i+1)-pos.getX(i),ay=pos.getY(i+1)-pos.getY(i),az=pos.getZ(i+1)-pos.getZ(i),
+          bx=pos.getX(i+2)-pos.getX(i),by=pos.getY(i+2)-pos.getY(i),bz=pos.getZ(i+2)-pos.getZ(i),
+          nx=Math.abs(ay*bz-az*by),ny=Math.abs(az*bx-ax*bz),nz=Math.abs(ax*by-ay*bx);
+    for(let k=0;k<3;k++){const x=pos.getX(i+k),y=pos.getY(i+k),z=pos.getZ(i+k);
+      const [u,v]=nz>=nx&&nz>=ny?[x,y]:(ny>=nx?[x,z]:[y,z]);uv[(i+k)*2]=u/UV_MM;uv[(i+k)*2+1]=v/UV_MM;}
+  }
+  g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
   const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.15,side:THREE.DoubleSide}));
+  m.userData.std=m.material;m.userData.real=realMaterial();m.userData.colStd=g.attributes.color;m.userData.colReal=new THREE.BufferAttribute(colR,3);
   S.add(m);return m;
 }
 const base=load(DATA.base,0x8aa4c0), lid=load(DATA.lid,0xe1e4e8);
 const $=id=>document.getElementById(id);
+$('real').onchange=e=>{for(const m of [base,lid]){m.material=e.target.checked?m.userData.real:m.userData.std;m.geometry.setAttribute('color',e.target.checked?m.userData.colReal:m.userData.colStd);}
+  key.intensity=e.target.checked?1.5:.8;hemi.intensity=e.target.checked?1.3:.9;};
 // power button (cyan): sticks out of the front face; rides with the base
 {const bin=Uint8Array.from(atob(DATA.button),c=>c.charCodeAt(0)),g=new THREE.STLLoader().parse(bin.buffer);g.computeVertexNormals();
  base.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x00c8d7,roughness:.4,metalness:.1})));}
