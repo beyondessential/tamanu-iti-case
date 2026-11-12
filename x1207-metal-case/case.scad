@@ -223,6 +223,8 @@ tamper_screw = [screw_x[1], screw_y[1]];   // the bottom screw a tamper-evident 
 
 y_seam = wy/2 - t - flange_w - strip_gap;   // where the lid's top plate ends, in front of the rear flange
 
+module bottom_main_vent_rect() rect2(bot_slot_x[0] - bot_slot_w/2 - km, bot_slot_x[6] + bot_slot_w/2 + km, bot_slot_y - bot_slot_len/2 - km, bot_slot_y + bot_slot_len/2 + km);
+
 // kind: "hard" (keep clear), "soft" (avoid), "free" (suggested sticker area); owner: "lid" or "base"
 module zones(kind, owner) {
     if (kind == "hard" && owner == "lid") {
@@ -248,8 +250,10 @@ module zones(kind, owner) {
             for (h = sa_hdmi) hole_rect2(h[0], h[3], h[1], h[2]);
         }
         face_extrude("B") vent_rect2(sb_region[0], sb_region[2], sb_region[1]);
-        face_extrude("bottom")   // only the hanging crosses; the vents are under the tamper sticker, the 3-slot group and small holes are unused
+        face_extrude("bottom") {   // main vent group and the hanging crosses; the 3-slot group and small holes are unused
+            bottom_main_vent_rect();
             for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);
+        }
         for (f = ["A", "B"]) face_extrude(f) {                           // seams: never cover (it would stop the lid coming off)
             rect2(-wy/2, wy/2, hgt - 1 - seam_m, hgt);
             rect2(-wy/2, -wy/2 + t + seam_m, 0, hgt);
@@ -300,9 +304,10 @@ module zones(kind, owner) {
                 circ2(rr_btn[0], rr_btn[2], rr_btn[1] + 4);
             }
         }
-        face_extrude("bottom") difference() {                                                                                  // tamper-evident sticker: the whole area between the feet, over the vents and the middle screw
+        face_extrude("bottom") difference() {                                                                                  // tamper-evident sticker: the area between the feet, incl. the middle screw and the 3-slot vent
             rect2(-wx/2 + free_edge, wx/2 - free_edge, -(foot_xy[1] - (foot_d + 3)/2), foot_xy[1] - (foot_d + 3)/2);
             for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);                                                       // but not the hanging crosses
+            bottom_main_vent_rect();                                                                                            // nor the main vent group
         }
     }
 }
