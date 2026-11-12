@@ -22,7 +22,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><input type="checkbox" id="l" checked><span class="sw" style="background:#c8cdd2"></span>Lid (top plate + port face)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Port face</button><button data-v="rear">Rear</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
-  <p>Port face = Ethernet/USB. Side A = Pi USB-C + HDMI. Rear = SD, power button. Drag to orbit, scroll to zoom.</p>
+  <p>Port face = Ethernet/USB. Side A = Pi USB-C + HDMI. Rear = SD, power button. Drag to rotate freely (any angle), scroll to zoom, right-drag to pan.</p>
 </div>
 <script>/*__THREE__*/</script>
 <script>
@@ -32,7 +32,8 @@ const R=new THREE.WebGLRenderer({antialias:true,alpha:true});
 R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
 const S=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(35,1,1,2000);
-const C=new THREE.OrbitControls(cam,R.domElement);C.enableDamping=true;
+const C=new THREE.TrackballControls(cam,R.domElement);
+C.rotateSpeed=3;C.zoomSpeed=1.2;C.panSpeed=0.8;C.dynamicDampingFactor=0.12;C.noRoll=false;
 S.add(new THREE.HemisphereLight(0xffffff,0x667788,.9));
 const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);
 // STL is Z-up; use a Z-up scene
@@ -49,10 +50,12 @@ $('b').onchange=e=>base.visible=e.target.checked;
 $('l').onchange=e=>lid.visible=e.target.checked;
 $('e').oninput=e=>lid.position.z=+e.target.value;
 const views={port:[0,-1,.35],rear:[0,1,.35],a:[-1,0,.35],b:[1,0,.35],top:[0,-.001,1],bot:[0,-.001,-1]};
-function setView(k){const v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260);C.target.set(0,0,21);cam.position.set(v.x,v.y,21+v.z);}
+function setView(k){const v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260);
+  cam.up.set(0,0,1);if(k==='top'||k==='bot')cam.up.set(0,1,0);
+  C.target.set(0,0,21);cam.position.set(v.x,v.y,21+v.z);cam.lookAt(C.target);C.update();}
 document.querySelectorAll('button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
-setView('port');cam.position.add(new THREE.Vector3(120,-40,60));
-function size(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+setView('port');cam.position.add(new THREE.Vector3(120,-40,60));cam.lookAt(C.target);
+function size(){R.setSize(innerWidth,innerHeight);C.handleResize();cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
 (function loop(){requestAnimationFrame(loop);C.update();R.render(S,cam);})();
 </script></body></html>

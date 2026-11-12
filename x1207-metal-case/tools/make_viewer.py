@@ -14,7 +14,7 @@ def to_binary(path):
 
 tpl = (root / 'tools' / 'viewer.template.html').read_text()
 v = root / 'tools' / 'vendor'
-three = '\n'.join((v / f).read_text() for f in ('three.min.js', 'STLLoader.js', 'OrbitControls.js'))
+three = '\n'.join((v / f).read_text() for f in ('three.min.js', 'STLLoader.js', 'TrackballControls.js'))
 # use a function so backslashes/regex chars in the JS are not interpreted
 html = tpl.replace('/*__THREE__*/', three).replace('__BASE__', to_binary(root / 'renders' / 'base.stl')) \
           .replace('__LID__', to_binary(root / 'renders' / 'lid.stl'))
