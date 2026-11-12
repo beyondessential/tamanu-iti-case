@@ -224,7 +224,13 @@ module vent_rect2(uc, vc, ncols) rect2(uc - vent_total()/2 - km, uc + vent_total
 module hole_rect2(u, v, w, h, m=km) rect2(u - w/2 - m, u + w/2 + m, v - h/2 - m, v + h/2 + m);
 pi_x = [-45.8, 10.2];   // X extent of the Raspberry Pi 5 board (56 mm wide, from the 49 mm screw pattern); the active cooler sits over it
 seam_m = 3;             // half-width of the keep-clear band over a lid/base seam
-tamper_screw = [screw_x[1], screw_y[1]];   // the bottom screw a tamper-evident sticker should cover
+tamper_screw = [screw_x[1], screw_y[1]];
+// A keep-clear band across the sticker-allowed part of the top, snapped to the vent row nearest this distance
+// from one edge. top_keep_from "rear" measures from the port face edge (-Y), "front" from the button face edge (+Y).
+top_keep_dist = 41;  top_keep_from = "rear";
+top_keep_target = top_keep_from == "front" ? wy/2 - top_keep_dist : -wy/2 + top_keep_dist;
+top_row0 = top_patch[0] + (top_patch[1] - 1)/2 * vent_pitch;                       // Y of the first vent row, at +Y
+top_keep_row = top_row0 - round((top_row0 - top_keep_target) / vent_pitch) * vent_pitch;   // Y of the snapped row   // the bottom screw a tamper-evident sticker should cover
 
 y_seam = wy/2 - t - flange_w - strip_gap;   // where the lid's top plate ends, in front of the rear flange
 
@@ -237,6 +243,7 @@ module zones(kind, owner) {
         face_extrude("top") {
             rect2(-vent_total()/2 - km, pi_x[1] + 1.5, top_patch[0] - vent_extent(top_patch[1])/2 - km, top_patch[0] + vent_extent(top_patch[1])/2 + km);
             rect2(-wx/2, wx/2, y_seam - seam_m, y_seam + seam_m);       // the gap between lid and base: never cover
+            rect2(pi_x[1] + 1.5, wx/2 - free_edge, top_keep_row - vent_pitch/2, top_keep_row + vent_pitch/2);   // the whole vent row near top_keep_dist, across the sticker-allowed side
         }
         face_extrude("rear") {
             for (p = [eth, usb3, usb2]) hole_rect2(p[0], port_z, p[1], p[2]);
@@ -283,7 +290,10 @@ module zones(kind, owner) {
     if (kind == "free" && owner == "lid") {
         face_extrude("top") {
             rect2(-wx/2 + free_edge, wx/2 - free_edge, -wy/2 + free_edge, top_patch[0] - vent_extent(top_patch[1])/2 - km);   // strip by the rear edge
-            rect2(pi_x[1] + 1.5, wx/2 - free_edge, -wy/2 + free_edge, y_seam - seam_m);                                      // the side without the Pi: vents may be covered
+            difference() {                                                                                                     // the side without the Pi: vents may be covered, except the keep-clear row
+                rect2(pi_x[1] + 1.5, wx/2 - free_edge, -wy/2 + free_edge, y_seam - seam_m);
+                rect2(pi_x[1] + 1.5, wx/2 - free_edge, top_keep_row - vent_pitch/2, top_keep_row + vent_pitch/2);
+            }
         }
         face_extrude("rear") {
             rect2(-37, 37, free_edge, port_z - 8 - km);                                                                       // strip under the ports
