@@ -8,8 +8,13 @@
 //
 // PARTS
 //   lid  = L-shaped: top plate + the PORT FACE (Ethernet/USB), 90 deg bend, 4 corner screw holes.
+//          Its rear edge has a joggled strip, one sheet thickness below the plate and 5 mm
+//          narrower on each side, which slots UNDER the rear flange of the base.
 //   base = bottom + the other three walls (side A, side B, rear), with a small inward flange
-//          along the top of each wall; the lid's top plate sits flat on those flanges.
+//          along the top of each wall. Side flanges are one thickness below the top plane (the
+//          lid plate sits on them); the rear flange is flush with the top plane.
+//   Assembly: tilt the lid, slide the strip under the rear flange, pivot the plate down onto
+//          the side flanges, then screw through the port face.
 // AXES (origin = footprint centre, z=0 = bottom)
 //   -Y port face (Eth, 2xUSB3/2.0 stacks, UPS USB-C in)      +Y rear: LED hole, TF slot, power button
 //   -X side A: Pi USB-C + 2x micro-HDMI at the rear end       +X side B: vents only
@@ -23,7 +28,9 @@ wy      = 92.8;   // Y, depth
 hgt     = 42.8;   // Z
 t       = 1.0;    // sheet thickness
 corner_r = 1.0;   // vertical-edge rounding
-flange_w = 4;     // width of the inward flanges the lid sits on
+flange_w = 4;     // width of the inward flanges
+strip_inset = 5;  // lid rear strip is this much narrower than the lid on each side
+strip_gap = 0.3;  // clearance between lid plate end and rear flange
 explode  = 0;     // preview gap between parts
 
 /* [Staggered slot pattern (top and sides)] */
@@ -132,11 +139,15 @@ module outer() cuboid([wx, wy, hgt], rounding=corner_r, edges="Z", anchor=BOT);
 module inner() up(t) cuboid([wx - 2*t, wy - 2*t, hgt - 2*t], rounding=max(corner_r - t, 0.1), edges="Z", anchor=BOT);
 
 module lid_solid() {
+    y_end = wy/2 - t - flange_w - strip_gap;      // where the flat plate stops, in front of the rear flange
     intersection() {
         outer();
         union() {
-            translate([-wx/2 - 1, -wy/2 - 1, hgt - t]) cube([wx + 2, wy + 2, t + 1]);   // top plate
-            translate([-wx/2 - 1, -wy/2 - 1, -1]) cube([wx + 2, t + 1, hgt + 2]);         // port face
+            translate([-wx/2 - 1, -wy/2 - 1, hgt - t]) cube([wx + 2, y_end + wy/2 + 1, t + 1]);   // top plate
+            translate([-wx/2 - 1, -wy/2 - 1, -1]) cube([wx + 2, t + 1, hgt + 2]);                  // port face
+            // joggle: step down one thickness, then a flat strip that runs under the rear flange
+            translate([-(wx/2 - strip_inset), y_end - t, hgt - 2*t]) cube([wx - 2*strip_inset, t, 2*t]);
+            translate([-(wx/2 - strip_inset), y_end - t, hgt - 2*t]) cube([wx - 2*strip_inset, flange_w + strip_gap + t - 0.3, t]);
         }
     }
 }
@@ -147,10 +158,15 @@ module base_solid() {
             difference() { outer(); inner(); }
             translate([-wx/2 - 1, -wy/2 + t, -1]) cube([wx + 2, wy, hgt]);          // below the lid plate, behind the port face
         }
+        // rear wall runs to the full height and folds in as a flange flush with the top plane
+        intersection() {
+            outer();
+            translate([-wx/2 - 1, wy/2 - t - flange_w, hgt - t]) cube([wx + 2, flange_w + t + 1, t]);
+        }
         // inward flanges along the top of side A, side B and rear
         translate([0, 0, hgt - 2*t]) difference() {
             translate([-wx/2 + t/2, -wy/2 + t, 0]) cube([wx - t, wy - t - t/2, t]);
-            translate([-wx/2 + t + flange_w, -wy/2, -1]) cube([wx - 2*t - 2*flange_w, wy - t - flange_w + 0.0, t + 2]);
+            translate([-wx/2 + t + flange_w, -wy/2, -1]) cube([wx - 2*t - 2*flange_w, wy + 2, t + 2]);
         }
         // domed rubber feet
         for (sx = [-1, 1], sy = [-1, 1])
