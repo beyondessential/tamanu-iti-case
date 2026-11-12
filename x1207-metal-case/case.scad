@@ -30,8 +30,8 @@ wy      = 90.8;   // Y, depth
 hgt     = 42.8;   // Z
 t       = 1.0;    // sheet thickness
 corner_r = 1.0;   // vertical-edge rounding
-flange_w = 4;     // width of the inward flanges
 strip_inset = 8.8;  // lid rear strip is this much narrower than the lid on each side (scan: 75.2 of 92.8 mm)
+strip_len = 4.8;  // how far the lid strip sticks out past the plate edge, from the scan
 strip_gap = 0.3;  // clearance between lid plate end and rear flange
 explode  = 0;     // preview gap between parts
 
@@ -46,7 +46,14 @@ vent_gap = 3.0;                     // gap between cells along a column
 vent_lens = [vent_dot, 7, 9, 11, 13, 15];  // cell lengths, ascending along +u for "A" columns
 vent_pitch = 5.0;                   // column-to-column distance
 // patches: top = [centre along Y, columns]; side faces = [centre along the face, columns, z of centre]
-top_patch = [-1.0, 12];             // 12 columns, centred about 1 mm toward the port face from the middle
+// Top vent position, anchored on a measurement of the real case: the outer edge of the first vent row
+// (counting from the front, the button face) is 20 mm from the front's outer edge. The lid scan puts that row's
+// centre 13.6 mm from the lid plate's edge, so the plate stops 7.7 mm short of the front and the flange is wide.
+top_edge_to_front = 20;
+row_to_plate_edge = 13.6;
+top_y0 = wy/2 - top_edge_to_front - vent_w/2;                 // Y of the first vent row
+flange_w = wy/2 - t - strip_gap - (top_y0 + row_to_plate_edge);   // width of the inward flanges, about 6.4
+top_patch = [top_y0 - 11/2 * vent_pitch, 12];   // 12 rows of vents counted from the scan; the first is at top_y0
 
 /* [Bottom] */
 foot_d = 7;                        // domed rubber feet (hemispheres)
@@ -165,7 +172,7 @@ module lid_solid() {
             translate([-wx/2 - 1, -wy/2 - 1, -1]) cube([wx + 2, t + 1, hgt + 2]);                  // port face
             // joggle: step down one thickness, then a flat strip that runs under the rear flange
             translate([-(wx/2 - strip_inset), y_end - t, hgt - 2*t]) cube([wx - 2*strip_inset, t, 2*t]);
-            translate([-(wx/2 - strip_inset), y_end - t, hgt - 2*t]) cube([wx - 2*strip_inset, flange_w + strip_gap + t - 0.3, t]);
+            translate([-(wx/2 - strip_inset), y_end - t, hgt - 2*t]) cube([wx - 2*strip_inset, strip_len + t, t]);
         }
     }
 }
@@ -225,12 +232,9 @@ module hole_rect2(u, v, w, h, m=km) rect2(u - w/2 - m, u + w/2 + m, v - h/2 - m,
 pi_x = [-45.8, 10.2];   // X extent of the Raspberry Pi 5 board (56 mm wide, from the 49 mm screw pattern); the active cooler sits over it
 seam_m = 3;             // half-width of the keep-clear band over a lid/base seam
 tamper_screw = [screw_x[1], screw_y[1]];
-// A keep-clear band across the sticker-allowed part of the top, snapped to the vent row nearest this distance
-// from one edge. top_keep_from "rear" measures from the port face edge (-Y), "front" from the button face edge (+Y).
-top_keep_dist = 41;  top_keep_from = "rear";
-top_keep_target = top_keep_from == "front" ? wy/2 - top_keep_dist : -wy/2 + top_keep_dist;
-top_row0 = top_patch[0] + (top_patch[1] - 1)/2 * vent_pitch;                       // Y of the first vent row, at +Y
-top_keep_row = top_row0 - round((top_row0 - top_keep_target) / vent_pitch) * vent_pitch;   // Y of the snapped row   // the bottom screw a tamper-evident sticker should cover
+// A keep-clear band across the sticker-allowed part of the top: one whole vent row, counted from the front.
+top_keep_row_no = 5;
+top_keep_row = top_y0 - (top_keep_row_no - 1) * vent_pitch;   // Y of that row
 
 y_seam = wy/2 - t - flange_w - strip_gap;   // where the lid's top plate ends, in front of the rear flange
 
@@ -243,7 +247,7 @@ module zones(kind, owner) {
         face_extrude("top") {
             rect2(-vent_total()/2 - km, pi_x[1] + 1.5, top_patch[0] - vent_extent(top_patch[1])/2 - km, top_patch[0] + vent_extent(top_patch[1])/2 + km);
             rect2(-wx/2, wx/2, y_seam - seam_m, y_seam + seam_m);       // the gap between lid and base: never cover
-            rect2(pi_x[1] + 1.5, wx/2 - free_edge, top_keep_row - vent_pitch/2, top_keep_row + vent_pitch/2);   // the whole vent row near top_keep_dist, across the sticker-allowed side
+            rect2(pi_x[1] + 1.5, wx/2 - free_edge, top_keep_row - vent_pitch/2, top_keep_row + vent_pitch/2);   // the whole 5th vent row from the front, across the sticker-allowed side
         }
         face_extrude("rear") {
             for (p = [eth, usb3, usb2]) hole_rect2(p[0], port_z, p[1], p[2]);
