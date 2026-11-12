@@ -16,7 +16,9 @@
 //   Assembly: tilt the lid, slide the strip under the rear flange, pivot the plate down onto
 //          the side flanges, then screw through the port face.
 // AXES (origin = footprint centre, z=0 = bottom)
-//   -Y port face (Eth, 2xUSB3/2.0 stacks, UPS USB-C in)      +Y rear: LED hole, TF slot, power button
+//   -Y "REAR" = the port face (Eth, 2xUSB3/2.0 stacks, UPS USB-C in)   [code calls it the port face / -Y]
+//   +Y "FRONT" = LED hole, TF slot, power button                       [code calls it rr_*, +Y]
+//   (team terms: rear = ports, front = power button; the variable names predate that)
 //   -X side A: Pi USB-C + 2x micro-HDMI at the rear end       +X side B: vents only
 include <BOSL2/std.scad>
 
