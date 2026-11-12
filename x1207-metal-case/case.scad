@@ -82,6 +82,9 @@ rr_tf  = [-20, 13.5, 4.6, 11];     // TF slot [x, w, h, z] (obround)
 rr_btn = [-3.9, 6, 35.2];          // power button hole [x, d, z]
 rr_region = [-1.4, 2, 23];    // rear vents [centre x, columns, z of patch centre]
 
+btn_stick = 3;                     // the power button protrudes this far from the front face
+btn_d     = rr_btn[1] - 0.8;       // slightly smaller than its hole
+
 /* [Side B, +X: vents only] */
 sb_region = [0, 2, hgt - 11];   // side B vents
 
@@ -191,6 +194,8 @@ module base_solid() {
             }
     }
 }
+
+module button() color("cyan") translate([rr_btn[0], wy/2 - t, rr_btn[2]]) rotate([-90, 0, 0]) cylinder(d=btn_d, h=t + btn_stick);
 
 module lid()  { color(lid_color)  difference() { lid_solid();  lid_cutters(); } }
 module base() { color(base_color) difference() { base_solid(); base_cutters(); } }
@@ -318,5 +323,6 @@ if (len(part) > 2 && part[0] == "z") {   // part = "z_<kind>_<owner>", e.g. z_ha
           (part == "z_hard_lid" || part == "z_soft_lid" || part == "z_free_lid") ? "lid" : "base");
 }
 else if (part == "base") base();
+else if (part == "button") button();
 else if (part == "lid") lid();
-else { base(); up(explode) lid(); }
+else { base(); up(explode) lid(); button(); }

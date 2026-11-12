@@ -25,6 +25,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <h1>X1207 / X1208 metal case</h1>
   <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base (bottom + front and side walls)</label>
   <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid (top plate + rear / port face)</label>
+  <label><span class="sw" style="background:#00c8d7"></span>Power button (sticks out 3 mm)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Rear (ports)</button><button data-v="rear">Front (button)</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
   <h2>Zones</h2>
@@ -41,7 +42,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
 </div>
 <script>/*__THREE__*/</script>
 <script>
-const DATA={base:"__BASE__",lid:"__LID__"}, ZONES=__ZONES__;
+const DATA={base:"__BASE__",lid:"__LID__",button:"__BUTTON__"}, ZONES=__ZONES__;
 const el=document.getElementById('v');
 const R=new THREE.WebGLRenderer({antialias:true,alpha:true});
 R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
@@ -72,6 +73,9 @@ function load(b64,color){
 }
 const base=load(DATA.base,0x8aa4c0), lid=load(DATA.lid,0xe1e4e8);
 const $=id=>document.getElementById(id);
+// power button (cyan): sticks out of the front face; rides with the base
+{const bin=Uint8Array.from(atob(DATA.button),c=>c.charCodeAt(0)),g=new THREE.STLLoader().parse(bin.buffer);g.computeVertexNormals();
+ base.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x00c8d7,roughness:.4,metalness:.1})));}
 // ---- keepout zones: translucent overlays; lid zones ride with the lid when exploded ----
 const ZCOL={hard:0xe5484d,soft:0xf5a524,free:0x30a46c}, zones={hard:[],soft:[],free:[]};
 for(const k of ['hard','soft','free'])for(const o of ['lid','base']){
