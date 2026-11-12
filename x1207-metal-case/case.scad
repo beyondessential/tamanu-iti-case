@@ -23,25 +23,28 @@ include <BOSL2/std.scad>
 part = "both";
 
 /* [Body] */
-wx      = 90.8;   // X, across the port face
-wy      = 92.8;   // Y, depth
+wx      = 92.8;   // X, across the port face (92.8 = length of the lid's bend line, from the scan)
+wy      = 90.8;   // Y, depth
 hgt     = 42.8;   // Z
 t       = 1.0;    // sheet thickness
 corner_r = 1.0;   // vertical-edge rounding
 flange_w = 4;     // width of the inward flanges
-strip_inset = 5;  // lid rear strip is this much narrower than the lid on each side
+strip_inset = 8.8;  // lid rear strip is this much narrower than the lid on each side (scan: 75.2 of 92.8 mm)
 strip_gap = 0.3;  // clearance between lid plate end and rear flange
 explode  = 0;     // preview gap between parts
 
-/* [Staggered slot pattern (top and sides)] */
-// Rows of long slots, alternate rows shifted half a period. Slots are clipped to the region:
-// a clipped slot becomes a shorter slot, or a dot when almost nothing is left, so edges line up.
-// ONE pattern for the top and every side; each face only says where its patch goes.
-vent_L = 14; vent_gap = 7.5; vent_w = 2.4;  // slot length, gap along a row, slot width
-vent_rp = 5.8;                              // row pitch
-// A patch is [centre along the face, requested length, rows, z of the patch centre]; the length is
-// snapped to a whole number of slot periods so both ends of every row finish flush.
-top_patch = [0, 75, 13];                    // [y centre ignored, length along X, rows along Y]
+/* [Vent pattern (top and every side) - measured from a 300 dpi flatbed scan of the lid] */
+// Columns of slots that taper: each column is 6 cells along the slot axis, separated by a constant
+// gap: a dot and slots of 7, 9, 11, 13 and 15 mm. Neighbouring columns run in opposite directions
+// (the long end alternates), so the pattern ends flush on both sides with a dot at one end.
+// Slot axis = u. Columns are stacked across v at a fixed pitch.
+vent_w   = 2.55;                    // slot width
+vent_dot = 2.3;                     // dot diameter
+vent_gap = 3.0;                     // gap between cells along a column
+vent_lens = [vent_dot, 7, 9, 11, 13, 15];  // cell lengths, ascending along +u for "A" columns
+vent_pitch = 5.0;                   // column-to-column distance
+// patches: top = [centre along Y, columns]; side faces = [centre along the face, columns, z of centre]
+top_patch = [-1.0, 12];             // 12 columns, centred about 1 mm toward the port face from the middle
 
 /* [Bottom] */
 foot_d = 7;                        // domed rubber feet (hemispheres)
@@ -63,17 +66,17 @@ screw_d  = 3; screw_in = 4; screw_z_in = 4.5;  // corner screws: inset from the 
 /* [Side A, -X: connectors at the rear end] */
 sa_usbc = [33.2, 10, 4, 19];       // [y, w, h, z] Pi USB-C (do not power from it)
 sa_hdmi = [[18.4, 7, 4, 19], [4.9, 7, 4, 19]];
-sa_region = [2, 78, 2, hgt - 11];  // side A vents [centre y, length, rows, z of patch centre]
+sa_region = [2, 2, hgt - 11];  // side A vents [centre y, columns, z of patch centre]
 
 /* [Rear, +Y: Pi microSD end] */
 // positions read off the labelled wiki photo (case upside down): z counts up from the bottom plate
 rr_led = [[-36.6, 2.5, 16], [-33.5, 2, 12]];   // SSD LED hole + a small neighbour [x, d, z]
 rr_tf  = [-21, 13, 3.2, 12];       // TF slot [x, w, h, z] (obround)
 rr_btn = [-4.1, 5.5, 35.7];        // power button hole [x, d, z]
-rr_region = [-1.4, 78, 2, 23];    // rear vents [centre x, length, rows, z of patch centre]
+rr_region = [-1.4, 2, 23];    // rear vents [centre x, columns, z of patch centre]
 
 /* [Side B, +X: vents only] */
-sb_region = [0, 78, 2, hgt - 11];   // side B vents
+sb_region = [0, 2, hgt - 11];   // side B vents
 
 /* [Colours] */
 // outside light, inside dark (the viewer darkens inner faces; OpenSCAD previews are single-colour)
@@ -84,22 +87,21 @@ $fn = 40;
 
 module obround2d(l, w) hull() { for (s = [-1, 1]) translate([s*(l - w)/2, 0]) circle(d=w); }
 
-// The one vent helper (2D). u = along the slots, v = across the rows, centred on the origin.
-// Even rows start with a full slot flush at the left edge; odd rows are shifted half a period so they
-// start with a short tail (a short slot or a dot). The length is snapped to n periods
-// (n*(L+gap)-gap) so the right-hand ends are flush too.
-module vent_grid(len, nrows) {
-    p = vent_L + vent_gap;
-    n = max(1, round((len + vent_gap) / p));
-    W = n*p - vent_gap;
-    for (r = [0:nrows-1]) {
-        v = (r - (nrows-1)/2) * vent_rp;  off = (r % 2) * p/2;
-        for (k = [0:n]) {
-            lo = max(k*p - off, 0);  hi = min(k*p - off + vent_L, W);  l = hi - lo;
-            if (l >= 1.5*vent_w) translate([(lo+hi)/2 - W/2, v]) obround2d(l, vent_w);
-            else if (l >= 0.6*vent_w) translate([(lo+hi)/2 - W/2, v]) circle(d=vent_w);
-        }
+// The one vent helper (2D), used by the top and every side. u = along the slots, v = across the
+// columns, centred on the origin. Column 0 is at +v and is an "A" column (long end at +u);
+// columns then alternate A, B, A, ... where B is A reversed.
+function vent_total() = let(c = len(vent_lens)) vent_gap*(c-1) + (vent_lens[0] + vent_lens[1] + vent_lens[2] + vent_lens[3] + vent_lens[4] + vent_lens[5]);
+module vent_column(rev) {
+    c = len(vent_lens);
+    lens = rev ? [for (i = [c-1:-1:0]) vent_lens[i]] : vent_lens;
+    for (i = [0:c-1]) {
+        before = i == 0 ? 0 : (let(q = [for (k = [0:i-1]) lens[k] + vent_gap]) q * [for (k = [0:i-1]) 1]);
+        u = -vent_total()/2 + before + lens[i]/2;
+        translate([u, 0]) if (lens[i] == vent_dot) circle(d=vent_dot); else obround2d(lens[i], vent_w);
     }
+}
+module vent_grid(ncols) {
+    for (r = [0:ncols-1]) translate([0, ((ncols-1)/2 - r) * vent_pitch]) vent_column(r % 2 == 1);
 }
 
 // extrude a 2D cutter through a wall; (u,v) = (along wall, height)
@@ -111,7 +113,7 @@ module wally(side, u, v) {   // front/rear wall at -/+Y, u along X
 }
 // ---- cutters ----
 module lid_cutters() {
-    translate([0, 0, hgt - 2*t]) linear_extrude(3*t) vent_grid(top_patch[1], top_patch[2]);
+    translate([0, 0, hgt - 2*t]) translate([0, top_patch[0]]) linear_extrude(3*t) vent_grid(top_patch[1]);
     for (p = [eth, usb3, usb2]) wally(-1, p[0], port_z) offset(r=0.8) square([p[1]-1.6, p[2]-1.6], center=true);
     wally(-1, usbc_in[0], port_z + 2) obround2d(usbc_in[1], usbc_in[2]);
     for (sx = [-1, 1], z = [screw_z_in, hgt - screw_in - 1]) wally(-1, sx*(wx/2 - screw_in), z) circle(d=screw_d);
@@ -127,14 +129,14 @@ module base_cutters() {
     // side A: connectors + vents
     wallx(-1, sa_usbc[0], sa_usbc[3]) obround2d_rot(sa_usbc[1], sa_usbc[2]);
     for (h = sa_hdmi) wallx(-1, h[0], h[3]) obround2d_rot(h[1], h[2]);
-    wallx(-1, sa_region[0], sa_region[3]) vent_grid(sa_region[1], sa_region[2]);
+    wallx(-1, sa_region[0], sa_region[2]) vent_grid(sa_region[1]);
     // side B: vents
-    wallx(1, sb_region[0], sb_region[3]) vent_grid(sb_region[1], sb_region[2]);
+    wallx(1, sb_region[0], sb_region[2]) vent_grid(sb_region[1]);
     // rear: LED, TF, button, vents
     for (l = rr_led) wally(1, l[0], l[2]) circle(d=l[1]);
     wally(1, rr_tf[0], rr_tf[3]) obround2d(rr_tf[1], rr_tf[2]);
     wally(1, rr_btn[0], rr_btn[2]) circle(d=rr_btn[1]);
-    wally(1, rr_region[0], rr_region[3]) vent_grid(rr_region[1], rr_region[2]);
+    wally(1, rr_region[0], rr_region[2]) vent_grid(rr_region[1]);
 }
 // connector holes on side walls: u runs along Y, so a "w x h" obround is w along Y
 module obround2d_rot(w, h) obround2d(w, h);
