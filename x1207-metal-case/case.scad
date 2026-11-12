@@ -1,4 +1,4 @@
-// Geekworm/Suptronics X1207-C1 metal case (for Raspberry Pi 5 + X1207/X1208 UPS)
+// Tamanu Iti v4 case: the Geekworm/Suptronics X1207-C1 metal case (Raspberry Pi 5 + X1207/X1208 UPS)
 // Communication model: shows sticker surface vs. vent/port holes. NOT dimensionally exact.
 // OpenSCAD + BOSL2.   openscad -D 'part="base"' -o renders/base.stl case.scad     part = both | base | lid
 //

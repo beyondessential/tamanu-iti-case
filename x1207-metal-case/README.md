@@ -1,4 +1,6 @@
-# X1207-C1 metal case (communication model)
+# Tamanu Iti v4 case (communication model)
+
+The v4 case is the Geekworm/Suptronics X1207-C1 metal case (Raspberry Pi 5 + X1207/X1208 UPS).
 
 Geekworm/Suptronics X1207-C1 case for Raspberry Pi 5 + X1207/X1208 UPS, modelled to show which
 surfaces are free for sticker branding and which holes must stay clear for airflow and ports.
