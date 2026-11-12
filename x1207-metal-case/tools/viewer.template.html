@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>X1207 Case Viewer</title>
+<style>
+:root{--bg:#f4f5f7;--fg:#1c2530;--panel:#ffffffd9;--line:#c9ced4}
+@media (prefers-color-scheme:dark){:root{--bg:#161a20;--fg:#e6e9ee;--panel:#222831d9;--line:#3a424d}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px system-ui,sans-serif}
+#v{position:fixed;inset:0}
+.panel{position:fixed;left:16px;top:16px;max-width:300px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;backdrop-filter:blur(4px)}
+h1{font-size:15px;margin:0 0 4px}p{margin:4px 0;font-size:12px;opacity:.85}
+label{display:flex;align-items:center;gap:8px;margin:6px 0}
+.sw{width:12px;height:12px;border-radius:3px;border:1px solid var(--line)}
+input[type=range]{width:100%}
+button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:5px;cursor:pointer}
+</style></head><body>
+<div id="v"></div>
+<div class="panel">
+  <h1>X1207 / X1208 metal case</h1>
+  <p>Communication model — hole positions are approximate (traced from photos).</p>
+  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#2f3b4a"></span>Base (bottom + front/rear walls)</label>
+  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#c8cdd2"></span>Lid (top + side flanges)</label>
+  <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
+  <div><button data-v="port">Port face</button><button data-v="rear">Rear</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
+  <p>Port face = Ethernet/USB. Side A = Pi USB-C, HDMI, SD, power button. Drag to orbit, scroll to zoom.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+<script>
+const DATA={base:"__BASE__",lid:"__LID__"};
+const el=document.getElementById('v');
+const R=new THREE.WebGLRenderer({antialias:true,alpha:true});
+R.setPixelRatio(devicePixelRatio);el.appendChild(R.domElement);
+const S=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(35,1,1,2000);
+const C=new THREE.OrbitControls(cam,R.domElement);C.enableDamping=true;
+S.add(new THREE.HemisphereLight(0xffffff,0x667788,.9));
+const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);
+// STL is Z-up; use a Z-up scene
+cam.up.set(0,0,1);
+function load(b64,color){
+  const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const g=new THREE.STLLoader().parse(bin.buffer);g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:.55,metalness:.25,side:THREE.DoubleSide}));
+  S.add(m);return m;
+}
+const base=load(DATA.base,0x2f3b4a), lid=load(DATA.lid,0xc8cdd2);
+const $=id=>document.getElementById(id);
+$('b').onchange=e=>base.visible=e.target.checked;
+$('l').onchange=e=>lid.visible=e.target.checked;
+$('e').oninput=e=>lid.position.z=+e.target.value;
+const views={port:[0,-1,.35],rear:[0,1,.35],a:[-1,0,.35],b:[1,0,.35],top:[0,-.001,1],bot:[0,-.001,-1]};
+function setView(k){const v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260);C.target.set(0,0,21);cam.position.set(v.x,v.y,21+v.z);}
+document.querySelectorAll('button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+setView('port');cam.position.add(new THREE.Vector3(120,-40,60));
+function size(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+addEventListener('resize',size);size();
+(function loop(){requestAnimationFrame(loop);C.update();R.render(S,cam);})();
+</script></body></html>
