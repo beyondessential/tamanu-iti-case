@@ -18,11 +18,11 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
 <div class="panel">
   <h1>X1207 / X1208 metal case</h1>
   <p>Communication model — hole positions are approximate (traced from photos).</p>
-  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#2f3b4a"></span>Base (bottom + front/rear walls)</label>
-  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#c8cdd2"></span>Lid (top + side flanges)</label>
+  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#2f3b4a"></span>Base (bottom + side/rear walls)</label>
+  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#c8cdd2"></span>Lid (top plate + port face)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Port face</button><button data-v="rear">Rear</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
-  <p>Port face = Ethernet/USB. Side A = Pi USB-C, HDMI, SD, power button. Drag to orbit, scroll to zoom.</p>
+  <p>Port face = Ethernet/USB. Side A = Pi USB-C + HDMI. Rear = SD, power button. Drag to orbit, scroll to zoom.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/STLLoader.js"></script>

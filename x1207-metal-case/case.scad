@@ -1,21 +1,18 @@
 // Geekworm/Suptronics X1207-C1 metal case (for Raspberry Pi 5 + X1207/X1208 UPS)
 // Communication model: shows sticker surface vs. vent/port holes. NOT dimensionally exact.
-// OpenSCAD + BOSL2.
-//   openscad -D 'part="base"' -o renders/base.stl case.scad     part = both | base | lid
+// OpenSCAD + BOSL2.   openscad -D 'part="base"' -o renders/base.stl case.scad     part = both | base | lid
 //
-// Source: overall size 92.8 x 90.8 x 42.8 mm and hanging-hole spacing 65 mm are the published
-// specs (wiki.geekworm.com/X1207-C1). Hole positions/sizes are traced by eye from the wiki and
-// product photos, so expect errors of a few mm. All of them are parameters below.
+// Overall size 92.8 x 90.8 x 42.8 mm and the 65 mm hanging-hole spacing are published specs
+// (wiki.geekworm.com/X1207-C1). Hole positions/sizes are traced by eye from the wiki, product
+// and teardown photos: expect errors of a few mm. All of them are parameters below.
 //
-// Axes: origin at the centre of the footprint, z=0 at the bottom of the case.
-//   -Y = PORT FACE (Ethernet, 2x USB3, 2x USB2, UPS USB-C in)
-//   +Y = rear (slots only)
-//   -X = "side A": Pi USB-C + 2x micro-HDMI (rear end), SD slot, power button, LEDs, vents
-//   +X = "side B": vents only
-//   bottom: 4 rubber pads, 2 plus-shaped hanging holes (65 mm apart), 2 groups of slots
-//   top: staggered grid of short slots
-// Split: the lid is the top plate plus ~5 mm flanges on sides A and B (seam seen on side A in
-// the photos). Front and rear walls belong to the base and run the full height.
+// PARTS
+//   lid  = L-shaped: top plate + the PORT FACE (Ethernet/USB), 90 deg bend, 4 corner screw holes.
+//   base = bottom + the other three walls (side A, side B, rear), with a small inward flange
+//          along the top of each wall; the lid's top plate sits flat on those flanges.
+// AXES (origin = footprint centre, z=0 = bottom)
+//   -Y port face (Eth, 2xUSB3/2.0 stacks, UPS USB-C in)      +Y rear: LED hole, TF slot, power button
+//   -X side A: Pi USB-C + 2x micro-HDMI at the rear end       +X side B: vents only
 include <BOSL2/std.scad>
 
 part = "both";
@@ -26,127 +23,146 @@ wy      = 92.8;   // Y, depth
 hgt     = 42.8;   // Z
 t       = 1.0;    // sheet thickness
 corner_r = 1.0;   // vertical-edge rounding
-lid_drop = 5.0;   // lid flange depth on sides A/B
+flange_w = 4;     // width of the inward flanges the lid sits on
 explode  = 0;     // preview gap between parts
 
-/* [Top slots: staggered grid] */
-top_slot_l = 11;
-top_slot_w = 2.2;
-top_cols   = 5;
-top_col_pitch = 13;
-top_rows   = 11;
-top_row_pitch = 6.2;
+/* [Staggered slot pattern (top and sides)] */
+// Rows of long slots, alternate rows shifted half a period. Slots are clipped to the region:
+// a clipped slot becomes a shorter slot, or a dot when almost nothing is left, so edges line up.
+top_region_x = 72;   top_rows = 13;  top_row_pitch = 5.8;
+top_L = 14; top_gap = 5; top_w = 2.4;       // slot length, gap along the row, slot width
+side_L = 12; side_gap = 5; side_w = 2.2;
 
 /* [Bottom] */
-pad_d = 9;  pad_h = 2;
-pad_xy = [37, 39];                 // pad centre offsets (+/-)
+foot_d = 7;                        // domed rubber feet (hemispheres)
+foot_xy = [37, 39];
 plus_x = 6;  plus_y = 32.5;        // hanging holes at (plus_x, +/-plus_y) -> 65 mm apart
 plus_arm = 9; plus_w = 2.5;
-bot_groupA = [-14, 6, 4.5, 30];    // [x centre, slot count, pitch, slot length], slots run along Y
-bot_groupB = [ 26, 3, 4.5, 30];
+bot_groupA = [-14, 6, 4.5, 38];    // [x centre, slot count, pitch, slot length]; slots run along Y
+bot_groupB = [ 26, 4, 4.5, 34];
 bot_slot_w = 2.2;
 
-/* [Port face, -Y] */
+/* [Port face, -Y: in the lid] */
 port_z   = 25;
 eth      = [-34.5, 16, 14];        // [x, w, h]
 usb3     = [-16.4, 15, 16];
 usb2     = [  1.8, 15, 16];
 usbc_in  = [ 17.2, 10, 4];         // UPS USB-C power in
+screw_d  = 3; screw_in = 4; screw_z_in = 4.5;  // corner screws: inset from the face edges
 
-/* [Side A, -X] */
-sa_usbc = [33.2, 10, 4,  21];      // [y, w, h, z]  Pi USB-C (do not power from it)
+/* [Side A, -X: connectors at the rear end] */
+sa_usbc = [33.2, 10, 4, 21];       // [y, w, h, z] Pi USB-C (do not power from it)
 sa_hdmi = [[18.4, 7, 4, 21], [4.9, 7, 4, 21]];
-sa_sd   = [-31, 12, 2.5, 18];      // TF slot
-sa_btn  = [-12, 5, 30];            // power button hole [y, d, z]
-sa_led  = [-22, 2.5, 31];          // SSD LED hole [y, d, z]
+sa_region = [-8, 70, 2, hgt - 10]; // staggered vents [centre y, length, rows, z of first row]
 
-/* [Side vents] */
-vent_l = 8; vent_w = 2.2;
-vent_rows_z = [hgt - 12, hgt - 19];        // rows on sides B and rear
-vent_cols_b   = [-27, -13.5, 0, 13.5, 27]; // Y centres on side B
-vent_cols_rear = [-27, -13.5, 0, 13.5, 27];// X centres on rear
-vent_rows_a_z = [hgt - 12, 9];             // side A (between the port holes)
-vent_cols_a   = [-40, 0, 12];              // Y centres on side A rows
+/* [Rear, +Y: Pi microSD end] */
+rr_led = [-37, 2.2, 21];           // SSD LED hole [x, d, z]
+rr_tf  = [-26, 12, 2.5, 21];       // TF slot [x, w, h, z]
+rr_btn = [-3, 5, 33];              // power button hole [x, d, z]
+rr_region = [18, 50, 3, 24];       // staggered vents [centre x, length, rows, z of first row]
+
+/* [Side B, +X: vents only] */
+sb_region = [0, 70, 4, hgt - 8];
 
 /* [Colours] */
 base_color = "#2f3b4a";
 lid_color  = "#c8cdd2";
 
 $fn = 40;
-eps = 0.05;
 
-module slot(l, w, h=3*t) { cuboid([l, w, h], rounding=w/2 - 0.001, edges="Z"); }
-module rrect(sz) { cuboid(sz, rounding=min(sz[0], sz[1])/2 - 0.01, edges="Z"); }
+module obround2d(l, w) hull() { for (s = [-1, 1]) translate([s*(l - w)/2, 0]) circle(d=w); }
 
-// ---- hole cutters ----
-module top_cutters() {
-    for (r = [0:top_rows-1], c = [0:top_cols-1]) {
-        stagger = (r % 2) * top_col_pitch / 2;
-        x = (c - (top_cols-1)/2) * top_col_pitch + (r % 2 == 0 ? -1 : 1) * top_col_pitch / 4;
-        y = (r - (top_rows-1)/2) * top_row_pitch;
-        translate([x, y, hgt - t/2]) slot(top_slot_l, top_slot_w);
+// 2D staggered slot pattern. u = along the slots, v = across the rows. Centred on the origin.
+module stagger2d(Wu, nrows, rp, L, g, w) {
+    p = L + g;
+    n = ceil(Wu/p) + 1;
+    for (r = [0:nrows-1], k = [-n:n]) {
+        c = k*p + (r % 2) * p/2;
+        lo = max(c - L/2, -Wu/2);  hi = min(c + L/2, Wu/2);
+        len = hi - lo;  v = (r - (nrows-1)/2) * rp;
+        if (len >= 1.5*w) translate([(lo+hi)/2, v]) obround2d(len, w);
+        else if (len >= 0.6*w) translate([(lo+hi)/2, v]) circle(d=w);
     }
+}
+
+// extrude a 2D cutter through a wall; (u,v) = (along wall, height)
+module wallx(side, u, v) {   // side wall at +/-X, u along Y
+    translate([side > 0 ? wx/2 - 2*t : -wx/2 - t, u, v]) rotate([90, 0, 90]) linear_extrude(3*t) children();
+}
+module wally(side, u, v) {   // front/rear wall at -/+Y, u along X
+    translate([u, side > 0 ? wy/2 + t : -wy/2 + 2*t, v]) rotate([90, 0, 0]) linear_extrude(3*t) children();
+}
+// vents on a wall from a [centre, length, rows, z-of-first-row] region (rows go down from z)
+module wall_pattern(reg, L, g, w, rp=5.5) {
+    translate([reg[0], 0]) translate([0, reg[3] - (reg[2]-1)*rp/2]) stagger2d(reg[1], reg[2], rp, L, g, w);
+}
+
+// ---- cutters ----
+module lid_cutters() {
+    translate([0, 0, hgt - 2*t]) linear_extrude(3*t) stagger2d(top_region_x, top_rows, top_row_pitch, top_L, top_gap, top_w);
+    for (p = [eth, usb3, usb2]) wally(-1, p[0], port_z) offset(r=0.8) square([p[1]-1.6, p[2]-1.6], center=true);
+    wally(-1, usbc_in[0], port_z + 2) obround2d(usbc_in[1], usbc_in[2]);
+    for (sx = [-1, 1], z = [screw_z_in, hgt - screw_in - 1]) wally(-1, sx*(wx/2 - screw_in), z) circle(d=screw_d);
 }
 
 module plus() { cuboid([plus_arm, plus_w, 3*t]); cuboid([plus_w, plus_arm, 3*t]); }
 
-module bottom_cutters() {
+module base_cutters() {
+    // bottom
     for (g = [bot_groupA, bot_groupB], i = [0:g[1]-1])
-        translate([g[0] + (i - (g[1]-1)/2) * g[2], 0, t/2]) rotate(90) slot(g[3], bot_slot_w);
+        translate([g[0] + (i - (g[1]-1)/2) * g[2], 0, -t]) linear_extrude(3*t) rotate(90) obround2d(g[3], bot_slot_w);
     for (s = [-1, 1]) translate([plus_x, s*plus_y, t/2]) plus();
+    // side A: connectors + vents
+    wallx(-1, sa_usbc[0], sa_usbc[3]) obround2d_rot(sa_usbc[1], sa_usbc[2]);
+    for (h = sa_hdmi) wallx(-1, h[0], h[3]) obround2d_rot(h[1], h[2]);
+    wallx(-1, sa_region[0], 0) wall_pattern([0, sa_region[1], sa_region[2], sa_region[3]], side_L, side_gap, side_w);
+    // side B: vents
+    wallx(1, sb_region[0], 0) wall_pattern([0, sb_region[1], sb_region[2], sb_region[3]], side_L, side_gap, side_w);
+    // rear: LED, TF, button, vents
+    wally(1, rr_led[0], rr_led[2]) circle(d=rr_led[1]);
+    wally(1, rr_tf[0], rr_tf[3]) square([rr_tf[1], rr_tf[2]], center=true);
+    wally(1, rr_btn[0], rr_btn[2]) circle(d=rr_btn[1]);
+    wally(1, rr_region[0], 0) wall_pattern([0, rr_region[1], rr_region[2], rr_region[3]], side_L, side_gap, side_w);
 }
+// connector holes on side walls: u runs along Y, so a "w x h" obround is w along Y
+module obround2d_rot(w, h) obround2d(w, h);
 
-// holes through the wall at +/-X: orient a cutter's long axis along Y (slot) at (side, y, z)
-module xwall_slot(side, y, z, l=vent_l, w=vent_w) {
-    translate([side*(wx/2 - t/2), y, z]) rotate([90, 0, 90]) slot(l, w, 3*t);
-}
-module ywall_slot(side, x, z, l=vent_l, w=vent_w) {
-    translate([x, side*(wy/2 - t/2), z]) rotate([90, 0, 0]) slot(l, w, 3*t);
-}
+// ---- parts ----
+module outer() cuboid([wx, wy, hgt], rounding=corner_r, edges="Z", anchor=BOT);
+module inner() up(t) cuboid([wx - 2*t, wy - 2*t, hgt - 2*t], rounding=max(corner_r - t, 0.1), edges="Z", anchor=BOT);
 
-module wall_cutters() {
-    // port face (-Y)
-    for (p = [eth, usb3, usb2]) translate([p[0], -(wy/2 - t/2), port_z]) rotate([90,0,0]) cuboid([p[1], p[2], 3*t], rounding=0.8, edges="Y");
-    translate([usbc_in[0], -(wy/2 - t/2), port_z + 2]) rotate([90,0,0]) slot(usbc_in[1], usbc_in[2]);
-    // rear (+Y) vents
-    for (z = vent_rows_z, x = vent_cols_rear) ywall_slot(1, x, z);
-    // side B (+X) vents
-    for (z = vent_rows_z, y = vent_cols_b) xwall_slot(1, y, z);
-    // side A (-X): connectors, SD, button, LED, vents
-    translate([-(wx/2 - t/2), sa_usbc[0], sa_usbc[3]]) rotate([90,0,90]) slot(sa_usbc[1], sa_usbc[2]);
-    for (h = sa_hdmi) translate([-(wx/2 - t/2), h[0], h[3]]) rotate([90,0,90]) slot(h[1], h[2]);
-    translate([-(wx/2 - t/2), sa_sd[0], sa_sd[3]]) rotate([90,0,90]) cuboid([sa_sd[1], sa_sd[2], 3*t]);
-    translate([-(wx/2 - t/2), sa_btn[0], sa_btn[2]]) rotate([0,90,0]) cyl(d=sa_btn[1], h=3*t);
-    translate([-(wx/2 - t/2), sa_led[0], sa_led[2]]) rotate([0,90,0]) cyl(d=sa_led[1], h=3*t);
-    for (z = vent_rows_a_z, y = vent_cols_a) xwall_slot(-1, y, z);
-}
-
-// ---- body ----
-module body() {
-    difference() {
+module lid_solid() {
+    intersection() {
+        outer();
         union() {
-            difference() {
-                cuboid([wx, wy, hgt], rounding=corner_r, edges="Z", anchor=BOT);
-                up(t) cuboid([wx - 2*t, wy - 2*t, hgt - 2*t], rounding=max(corner_r - t, 0.1), edges="Z", anchor=BOT);
-            }
-            // rubber pads
-            for (sx = [-1, 1], sy = [-1, 1])
-                translate([sx*pad_xy[0], sy*pad_xy[1], 0]) cyl(d=pad_d, h=pad_h, anchor=TOP);
+            translate([-wx/2 - 1, -wy/2 - 1, hgt - t]) cube([wx + 2, wy + 2, t + 1]);   // top plate
+            translate([-wx/2 - 1, -wy/2 - 1, -1]) cube([wx + 2, t + 1, hgt + 2]);         // port face
         }
-        top_cutters();
-        bottom_cutters();
-        wall_cutters();
     }
 }
 
-// lid region: top slab spanning the full X, only between the front and rear walls
-module lid_region() {
-    translate([0, 0, hgt - lid_drop])
-        cuboid([wx + 2, wy - 2*t, lid_drop + 1], anchor=BOT);
+module base_solid() {
+    union() {
+        intersection() {
+            difference() { outer(); inner(); }
+            translate([-wx/2 - 1, -wy/2 + t, -1]) cube([wx + 2, wy, hgt]);          // below the lid plate, behind the port face
+        }
+        // inward flanges along the top of side A, side B and rear
+        translate([0, 0, hgt - 2*t]) difference() {
+            translate([-wx/2 + t/2, -wy/2 + t, 0]) cube([wx - t, wy - t - t/2, t]);
+            translate([-wx/2 + t + flange_w, -wy/2, -1]) cube([wx - 2*t - 2*flange_w, wy - t - flange_w + 0.0, t + 2]);
+        }
+        // domed rubber feet
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx*foot_xy[0], sy*foot_xy[1], 0]) intersection() {
+                scale([1, 1, 0.45]) sphere(d=foot_d);
+                translate([-foot_d, -foot_d, -foot_d]) cube([2*foot_d, 2*foot_d, foot_d]);
+            }
+    }
 }
 
-module lid()  { color(lid_color)  intersection() { body(); lid_region(); } }
-module base() { color(base_color) difference()   { body(); lid_region(); } }
+module lid()  { color(lid_color)  difference() { lid_solid();  lid_cutters(); } }
+module base() { color(base_color) difference() { base_solid(); base_cutters(); } }
 
 if (part == "base") base();
 else if (part == "lid") lid();

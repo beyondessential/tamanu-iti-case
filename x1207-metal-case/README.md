@@ -10,5 +10,7 @@ are published specs; hole positions are traced by eye from the wiki/product phot
 - `renders/preview.png` - exploded preview
 - `case.scad` - parametric OpenSCAD + BOSL2 source; `./build.sh` regenerates everything
 
-Assumed split: lid = top plate + ~5 mm flanges on the two sides without ports; base = bottom plus
-front/rear walls to full height. Check against a real unit.
+Parts (from the teardown photo of the real lid): the lid is L-shaped, a flat top plate plus the
+port face (Ethernet/USB) bent 90 degrees, with four corner screw holes. The base is the bottom plus
+the other three walls, each with a small inward flange along the top that the lid plate sits on.
+Vent holes use a staggered slot pattern; slots clipped at the pattern edge become short slots or dots.
