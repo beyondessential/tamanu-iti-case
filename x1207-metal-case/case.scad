@@ -173,7 +173,7 @@ module lid_solid() {
 module base_solid() {
     union() {
         intersection() {
-            difference() { outer(); up(t) cuboid([wx - 2*t, wy - 2*t, hgt], rounding=max(corner_r - t, 0.1), edges="Z", anchor=BOT); }   // cavity open at the top
+            difference() { outer(); translate([0, -(t + 2)/2, t]) cuboid([wx - 2*t, wy - t + 2, hgt], rounding=max(corner_r - t, 0.1), edges="Z", anchor=BOT); }   // cavity open at the top and through the port-face wall (that wall belongs to the lid)
             translate([-wx/2 - 1, -wy/2 + t, -1]) cube([wx + 2, wy, hgt]);          // cut the walls at hgt - t, below the lid plate and behind the port face
         }
         // rear wall runs to the full height and folds in as a flange flush with the top plane
