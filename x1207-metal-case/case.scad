@@ -304,10 +304,11 @@ module zones(kind, owner) {
                 circ2(rr_btn[0], rr_btn[2], rr_btn[1] + 4);
             }
         }
-        face_extrude("bottom") difference() {                                                                                  // tamper-evident sticker: the area between the feet, incl. the middle screw and the 3-slot vent
-            rect2(-wx/2 + free_edge, wx/2 - free_edge, -(foot_xy[1] - (foot_d + 3)/2), foot_xy[1] - (foot_d + 3)/2);
-            for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);                                                       // but not the hanging crosses
-            bottom_main_vent_rect();                                                                                            // nor the main vent group
+        face_extrude("bottom") difference() {                      // tamper-evident sticker: everything on the 3-slot side of the main vent, out to the edge bands
+            rect2(bot_slot_x[6] + bot_slot_w/2 + km, wx/2 - edge_m, -wy/2 + edge_m, wy/2 - edge_m);
+            for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);                                       // not the hanging crosses
+            for (sx = [-1, 1], sy = [-1, 1]) circ2(sx*foot_xy[0], sy*foot_xy[1], foot_d + 3);                   // not the feet
+            for (x = screw_x, y = screw_y) if (x != tamper_screw[0] || y != tamper_screw[1]) circ2(x, y, screw_zone_d);   // not the other screws
         }
     }
 }
