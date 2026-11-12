@@ -48,12 +48,17 @@ top_patch = [-1.0, 12];             // 12 columns, centred about 1 mm toward the
 
 /* [Bottom] */
 foot_d = 7;                        // domed rubber feet (hemispheres)
-foot_xy = [37, 39];
-plus_x = 6;  plus_y = 32.5;        // hanging holes at (plus_x, +/-plus_y) -> 65 mm apart
+// Bottom positions below were measured by un-warping (homography) the product photo of the underside
+// against the case outline, so they are good to roughly +/-1 mm.
+foot_xy = [35.9, 33.7];            // feet at (+/-x, +/-y)
+plus_x = -0.9;  plus_y = 32.4;     // hanging holes at (plus_x, +/-plus_y) -> 65 mm apart
 plus_arm = 9; plus_w = 2.5;
-bot_groupA = [-14, 6, 4.5, 38];    // [x centre, slot count, pitch, slot length]; slots run along Y
-bot_groupB = [ 26, 4, 4.5, 34];
-bot_slot_w = 2.2;
+bot_slot_x = [-30, -25, -20, -15, -10, -5, 0,  15.5, 20.5, 25.5];  // two groups of slots running along Y
+bot_slot_len = 43.6;  bot_slot_y = 1.0;  bot_slot_w = 2.55;
+screw_x = [-42.3, 7.4];  screw_y = [40.6, -17.4];  // 4 bottom screws: the Pi 5 mounting pattern (49 x 58)
+bot_screw_d = 3.2;
+bot_hole_xy = [[12, 28.6], [12, -27.4]];           // two small round holes (light pipes / test points)
+bot_hole_d = 2.5;
 
 /* [Port face, -Y: in the lid] */
 port_z   = 25;
@@ -70,9 +75,9 @@ sa_region = [2, 2, hgt - 11];  // side A vents [centre y, columns, z of patch ce
 
 /* [Rear, +Y: Pi microSD end] */
 // positions read off the labelled wiki photo (case upside down): z counts up from the bottom plate
-rr_led = [[-36.6, 2.5, 16], [-33.5, 2, 12]];   // SSD LED hole + a small neighbour [x, d, z]
-rr_tf  = [-21, 13, 3.2, 12];       // TF slot [x, w, h, z] (obround)
-rr_btn = [-4.1, 5.5, 35.7];        // power button hole [x, d, z]
+rr_led = [-33.8, 2.2, 14.5];       // SSD LED hole [x, d, z] (the dot at the end of the lower vent row is part of the pattern)
+rr_tf  = [-20, 13.5, 4.6, 11];     // TF slot [x, w, h, z] (obround)
+rr_btn = [-3.9, 6, 35.2];          // power button hole [x, d, z]
 rr_region = [-1.4, 2, 23];    // rear vents [centre x, columns, z of patch centre]
 
 /* [Side B, +X: vents only] */
@@ -100,8 +105,8 @@ module vent_column(rev) {
         translate([u, 0]) if (lens[i] == vent_dot) circle(d=vent_dot); else obround2d(lens[i], vent_w);
     }
 }
-module vent_grid(ncols) {
-    for (r = [0:ncols-1]) translate([0, ((ncols-1)/2 - r) * vent_pitch]) vent_column(r % 2 == 1);
+module vent_grid(ncols, swap=false) {
+    for (r = [0:ncols-1]) translate([0, ((ncols-1)/2 - r) * vent_pitch]) vent_column((r + (swap ? 1 : 0)) % 2 == 1);
 }
 
 // extrude a 2D cutter through a wall; (u,v) = (along wall, height)
@@ -123,8 +128,9 @@ module plus() { cuboid([plus_arm, plus_w, 3*t]); cuboid([plus_w, plus_arm, 3*t])
 
 module base_cutters() {
     // bottom
-    for (g = [bot_groupA, bot_groupB], i = [0:g[1]-1])
-        translate([g[0] + (i - (g[1]-1)/2) * g[2], 0, -t]) linear_extrude(3*t) rotate(90) obround2d(g[3], bot_slot_w);
+    for (x = bot_slot_x) translate([x, bot_slot_y, -t]) linear_extrude(3*t) rotate(90) obround2d(bot_slot_len, bot_slot_w);
+    for (x = screw_x, y = screw_y) translate([x, y, -t]) cylinder(d=bot_screw_d, h=3*t);
+    for (h = bot_hole_xy) translate([h[0], h[1], -t]) cylinder(d=bot_hole_d, h=3*t);
     for (s = [-1, 1]) translate([plus_x, s*plus_y, t/2]) plus();
     // side A: connectors + vents
     wallx(-1, sa_usbc[0], sa_usbc[3]) obround2d_rot(sa_usbc[1], sa_usbc[2]);
@@ -133,10 +139,10 @@ module base_cutters() {
     // side B: vents
     wallx(1, sb_region[0], sb_region[2]) vent_grid(sb_region[1]);
     // rear: LED, TF, button, vents
-    for (l = rr_led) wally(1, l[0], l[2]) circle(d=l[1]);
+    wally(1, rr_led[0], rr_led[2]) circle(d=rr_led[1]);
     wally(1, rr_tf[0], rr_tf[3]) obround2d(rr_tf[1], rr_tf[2]);
     wally(1, rr_btn[0], rr_btn[2]) circle(d=rr_btn[1]);
-    wally(1, rr_region[0], rr_region[2]) vent_grid(rr_region[1]);
+    wally(1, rr_region[0], rr_region[2]) vent_grid(rr_region[1], swap=true);   // upper row long->short toward +X, lower row the reverse
 }
 // connector holes on side walls: u runs along Y, so a "w x h" obround is w along Y
 module obround2d_rot(w, h) obround2d(w, h);
