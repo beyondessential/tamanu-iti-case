@@ -70,7 +70,7 @@ rr_btn = [-4.1, 5.5, 35.7];        // power button hole [x, d, z]
 rr_region = [-7.5, 66, 2, 24.5];   // staggered vents [centre x, length, rows, z of row centre]
 
 /* [Side B, +X: vents only] */
-sb_region = [0, 70, 4, hgt - 8];
+sb_region = [0, 70, 2, hgt - 11];  // 2 staggered rows
 
 /* [Colours] */
 base_color = "#2f3b4a";
