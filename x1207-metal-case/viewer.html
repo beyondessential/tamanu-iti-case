@@ -31,7 +31,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base</label>
   <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid</label>
   <label><span class="sw" style="background:#00c8d7"></span>Power button</label>
-  <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
+  <label>Explode <input type="range" id="e" min="0" max="170" value="0"></label>
   <div><button data-v="port">Rear</button><button data-v="rear">Front</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
   <label><input type="checkbox" id="real">Real colours</label>
   <h2>Zones</h2>
@@ -1305,7 +1305,8 @@ function updateMeasure(){
 }
 $('b').onchange=e=>base.visible=e.target.checked;
 $('l').onchange=e=>lid.visible=e.target.checked;
-$('e').oninput=e=>lid.position.z=+e.target.value;
+// the lid lifts away at 45 degrees between up (+Z) and the rear face normal (-Y), as it would come off in the hand
+$('e').oninput=e=>{const d=+e.target.value*Math.SQRT1_2;lid.position.set(0,-d,d);};
 const views={port:[0,-1,.35],rear:[0,1,.35],a:[-1,0,.35],b:[1,0,.35],top:[0,-.001,1],bot:[0,-.001,-1]};
 function setView(k){const fit=Math.max(1,0.7/(innerWidth/innerHeight)),v=new THREE.Vector3(...views[k]).normalize().multiplyScalar(260*fit);
   cam.up.set(0,0,1);if(k==='top'||k==='bot')cam.up.set(0,1,0);
