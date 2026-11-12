@@ -28,11 +28,13 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Rear (ports)</button><button data-v="rear">Front (button)</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
   <h2>Zones</h2>
+  <label><input type="checkbox" id="za" checked><b>All zones</b></label>
   <label><input type="checkbox" id="zh" checked><span class="sw" style="background:#e5484d"></span>Keep clear: vents, ports, button, LED, lid seam</label>
   <label><input type="checkbox" id="zs" checked><span class="sw" style="background:#f5a524"></span>Avoid: screws, feet, seams, edges</label>
   <label><input type="checkbox" id="zf" checked><span class="sw" style="background:#30a46c"></span>Suggested sticker areas</label>
   <h2>Measure</h2>
   <div><button id="mm">Measure</button><button id="mc">Clear</button></div>
+  <label><input type="checkbox" id="dims">Show overall dimensions</label>
   <label><input type="checkbox" id="snap" checked>Snap to corners / hole edges</label>
   <p id="mhelp">Click two points on the case. Distances are along the case axes in mm (set Explode to 0).</p>
   <p>Rear = ports (Ethernet/USB, UPS USB-C). Front = power button, SD slot, LED. Side A = Pi USB-C + HDMI. Drag to rotate freely (any angle), scroll to zoom, right-drag to pan.</p>
@@ -78,9 +80,14 @@ for(const k of ['hard','soft','free'])for(const o of ['lid','base']){
   const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:ZCOL[k],transparent:true,opacity:k==='soft'?.4:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,side:THREE.DoubleSide}));
   (o==='lid'?lid:base).add(m);zones[k].push(m);
 }
-$('zh').onchange=e=>zones.hard.forEach(m=>m.visible=e.target.checked);
-$('zs').onchange=e=>zones.soft.forEach(m=>m.visible=e.target.checked);
-$('zf').onchange=e=>zones.free.forEach(m=>m.visible=e.target.checked);
+const zbox={hard:$('zh'),soft:$('zs'),free:$('zf')};
+function syncZones(){
+  for(const k in zbox)zones[k].forEach(m=>m.visible=zbox[k].checked);
+  const n=Object.values(zbox).filter(b=>b.checked).length;
+  $('za').checked=n===3;$('za').indeterminate=n>0&&n<3;
+}
+for(const k in zbox)zbox[k].onchange=syncZones;
+$('za').onchange=e=>{for(const k in zbox)zbox[k].checked=e.target.checked;syncZones();};
 // ---- measurement: click two points; snaps to the nearest vertex of the clicked triangle ----
 const ray=new THREE.Raycaster(), meas=[], overlay=[]; let pending=null, measuring=false;
 const dot=()=>new THREE.Mesh(new THREE.SphereGeometry(0.9,12,8),new THREE.MeshBasicMaterial({color:0x2f6fed,depthTest:false}));
@@ -118,6 +125,28 @@ R.domElement.addEventListener('pointerup',e=>{
   if(!pending){pending={...pt,m:marker(pt)};}
   else{marker(pt);addMeasure(pending,pt);pending=null;}
 });
+// ---- overall dimensions (toggle) ----
+const dimGroup=new THREE.Group(),dimLabels=[];dimGroup.visible=false;S.add(dimGroup);
+(function(){
+  const o=9,{wx,wy,hgt}=DIM,V=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const defs=[[V(-wx/2,-wy/2-o,0),V(wx/2,-wy/2-o,0),'Width '+wx+' mm'],
+              [V(wx/2+o,-wy/2,0),V(wx/2+o,wy/2,0),'Depth '+wy+' mm'],
+              [V(-wx/2-o,-wy/2-o,0),V(-wx/2-o,-wy/2-o,hgt),'Height '+hgt+' mm']];
+  for(const [a,b,text] of defs){
+    const dir=b.clone().sub(a).normalize(), side=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,0,1)); if(side.lengthSq()<1e-6)side.set(1,0,0); side.normalize().multiplyScalar(2.5);
+    const pts=[a,b,a.clone().add(side),a.clone().sub(side),b.clone().add(side),b.clone().sub(side)];
+    const g=new THREE.BufferGeometry().setFromPoints([a,b,a.clone().add(side),a.clone().sub(side),b.clone().add(side),b.clone().sub(side)]);
+    g.setIndex([0,1,2,3,4,5]);
+    dimGroup.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x5b6672,depthTest:false})));
+    const div=document.createElement('div');div.className='lbl';div.textContent=text;div.style.display='none';document.body.appendChild(div);
+    dimLabels.push({div,pos:a.clone().add(b).multiplyScalar(.5)});
+  }
+})();
+$('dims').onchange=e=>{dimGroup.visible=e.target.checked;if(!e.target.checked)dimLabels.forEach(l=>l.div.style.display='none');};
+function updateDims(){
+  if(!dimGroup.visible)return;
+  for(const l of dimLabels){const p=l.pos.clone().project(cam);l.div.style.display=p.z<1?'block':'none';l.div.style.left=((p.x+1)/2*innerWidth)+'px';l.div.style.top=((1-p.y)/2*innerHeight)+'px';}
+}
 function updateMeasure(){
   for(const m of meas){
     const p=m.line.geometry.attributes.position, a=world(m.a), b=world(m.b);
@@ -138,5 +167,5 @@ document.querySelectorAll('button[data-v]').forEach(b=>b.onclick=()=>setView(b.d
 setView('port');cam.position.add(new THREE.Vector3(120,-40,60));cam.lookAt(C.target);
 function size(){R.setSize(innerWidth,innerHeight);C.handleResize();cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
-(function loop(){requestAnimationFrame(loop);C.update();updateMeasure();R.render(S,cam);})();
+(function loop(){requestAnimationFrame(loop);C.update();updateMeasure();updateDims();R.render(S,cam);})();
 </script></body></html>
