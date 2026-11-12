@@ -248,10 +248,8 @@ module zones(kind, owner) {
             for (h = sa_hdmi) hole_rect2(h[0], h[3], h[1], h[2]);
         }
         face_extrude("B") vent_rect2(sb_region[0], sb_region[2], sb_region[1]);
-        face_extrude("bottom") {   // main vent group and the hanging crosses; the 3-slot group and small holes are unused
-            rect2(bot_slot_x[0] - bot_slot_w/2 - km, bot_slot_x[6] + bot_slot_w/2 + km, bot_slot_y - bot_slot_len/2 - km, bot_slot_y + bot_slot_len/2 + km);
+        face_extrude("bottom")   // only the hanging crosses; the vents are under the tamper sticker, the 3-slot group and small holes are unused
             for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);
-        }
         for (f = ["A", "B"]) face_extrude(f) {                           // seams: never cover (it would stop the lid coming off)
             rect2(-wy/2, wy/2, hgt - 1 - seam_m, hgt);
             rect2(-wy/2, -wy/2 + t + seam_m, 0, hgt);
@@ -293,13 +291,19 @@ module zones(kind, owner) {
             rect2(-wy/2 + free_edge + 2, sa_hdmi[1][0] - sa_hdmi[1][1]/2 - km, free_edge, sa_region[2] - vent_extent(sa_region[1])/2 - km);   // empty block between vents and band, rear end
         }
         face_extrude("front") {
-            rect2(-wx/2 + free_edge, wx/2 - free_edge, free_edge, rr_led[2] - rr_led[1]/2 - km);                              // strip along the bottom (SD slot is blocked)
+            difference() {                                                                                                     // bottom area up to the vents, over the (blocked) SD slot, with a cut-out for the LED
+                rect2(-wx/2 + free_edge, wx/2 - free_edge, free_edge, rr_region[2] - vent_extent(rr_region[1])/2 - km);
+                circ2(rr_led[0], rr_led[2], rr_led[1] + 4);
+            }
             difference() {                                                                                                     // above the vents, with a cut-out round the button
                 rect2(-wx/2 + free_edge, wx/2 - free_edge, rr_region[2] + vent_extent(rr_region[1])/2 + km, hgt - free_edge);
                 circ2(rr_btn[0], rr_btn[2], rr_btn[1] + 4);
             }
         }
-        face_extrude("bottom") circ2(tamper_screw[0], tamper_screw[1], 9);                                                    // tamper-evident sticker over this screw
+        face_extrude("bottom") difference() {                                                                                  // tamper-evident sticker: the whole area between the feet, over the vents and the middle screw
+            rect2(-wx/2 + free_edge, wx/2 - free_edge, -(foot_xy[1] - (foot_d + 3)/2), foot_xy[1] - (foot_d + 3)/2);
+            for (sy = [-1, 1]) circ2(plus_x, sy*plus_y, plus_arm + 2*km);                                                       // but not the hanging crosses
+        }
     }
 }
 
