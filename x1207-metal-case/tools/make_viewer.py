@@ -16,7 +16,10 @@ tpl = (root / 'tools' / 'viewer.template.html').read_text()
 v = root / 'tools' / 'vendor'
 three = '\n'.join((v / f).read_text() for f in ('three.min.js', 'STLLoader.js', 'TrackballControls.js'))
 # use a function so backslashes/regex chars in the JS are not interpreted
-html = tpl.replace('/*__THREE__*/', three).replace('__BASE__', to_binary(root / 'renders' / 'base.stl')) \
+scad = (root / 'case.scad').read_text()
+dim = {k: float(re.search(r'^%s\s*=\s*([\d.]+)' % k, scad, re.M).group(1)) for k in ('wx', 'wy', 'hgt', 't')}
+import json
+html = tpl.replace('__DIM__', json.dumps(dim)).replace('/*__THREE__*/', three).replace('__BASE__', to_binary(root / 'renders' / 'base.stl')) \
           .replace('__LID__', to_binary(root / 'renders' / 'lid.stl'))
 (root / 'viewer.html').write_text(html)
 print('wrote viewer.html', len(html) // 1024, 'KiB')

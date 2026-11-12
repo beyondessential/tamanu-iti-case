@@ -18,8 +18,8 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
 <div class="panel">
   <h1>X1207 / X1208 metal case</h1>
   <p>Communication model — hole positions are approximate (traced from photos).</p>
-  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#2f3b4a"></span>Base (bottom + side/rear walls)</label>
-  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#c8cdd2"></span>Lid (top plate + port face)</label>
+  <label><input type="checkbox" id="b" checked><span class="sw" style="background:#8aa4c0"></span>Base (bottom + side/rear walls)</label>
+  <label><input type="checkbox" id="l" checked><span class="sw" style="background:#e1e4e8"></span>Lid (top plate + port face)</label>
   <label>Explode <input type="range" id="e" min="0" max="60" value="0"></label>
   <div><button data-v="port">Port face</button><button data-v="rear">Rear</button><button data-v="a">Side A</button><button data-v="b">Side B</button><button data-v="top">Top</button><button data-v="bot">Bottom</button></div>
   <p>Port face = Ethernet/USB. Side A = Pi USB-C + HDMI. Rear = SD, power button. Drag to rotate freely (any angle), scroll to zoom, right-drag to pan.</p>
@@ -38,13 +38,24 @@ S.add(new THREE.HemisphereLight(0xffffff,0x667788,.9));
 const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(150,-200,300);S.add(d);
 // STL is Z-up; use a Z-up scene
 cam.up.set(0,0,1);
+// Outside surfaces take the part colour; inside surfaces (anything inside the outer skin) are dark.
+const DIM=__DIM__, INNER=new THREE.Color(0x1b2129);
 function load(b64,color){
   const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
   const g=new THREE.STLLoader().parse(bin.buffer);g.computeVertexNormals();
-  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:.55,metalness:.25,side:THREE.DoubleSide}));
+  const pos=g.attributes.position, col=new Float32Array(pos.count*3), out=new THREE.Color(color), e=0.3;
+  const lx=DIM.wx/2-e, ly=DIM.wy/2-e, zlo=e, zhi=DIM.hgt-e;
+  for(let i=0;i<pos.count;i+=3){
+    const cx=(pos.getX(i)+pos.getX(i+1)+pos.getX(i+2))/3, cy=(pos.getY(i)+pos.getY(i+1)+pos.getY(i+2))/3, cz=(pos.getZ(i)+pos.getZ(i+1)+pos.getZ(i+2))/3;
+    const inner=Math.abs(cx)<lx&&Math.abs(cy)<ly&&cz>zlo&&cz<zhi;
+    const c=inner?INNER:out;
+    for(let k=0;k<3;k++){col[(i+k)*3]=c.r;col[(i+k)*3+1]=c.g;col[(i+k)*3+2]=c.b;}
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.15,side:THREE.DoubleSide}));
   S.add(m);return m;
 }
-const base=load(DATA.base,0x2f3b4a), lid=load(DATA.lid,0xc8cdd2);
+const base=load(DATA.base,0x8aa4c0), lid=load(DATA.lid,0xe1e4e8);
 const $=id=>document.getElementById(id);
 $('b').onchange=e=>base.visible=e.target.checked;
 $('l').onchange=e=>lid.visible=e.target.checked;

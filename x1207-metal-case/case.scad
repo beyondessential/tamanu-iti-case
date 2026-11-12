@@ -36,9 +36,12 @@ explode  = 0;     // preview gap between parts
 /* [Staggered slot pattern (top and sides)] */
 // Rows of long slots, alternate rows shifted half a period. Slots are clipped to the region:
 // a clipped slot becomes a shorter slot, or a dot when almost nothing is left, so edges line up.
-top_region_x = 72;   top_rows = 13;  top_row_pitch = 5.8;
-top_L = 14; top_gap = 5; top_w = 2.4;       // slot length, gap along the row, slot width
-side_L = 12; side_gap = 5; side_w = 2.2;
+// ONE pattern for the top and every side; each face only says where its patch goes.
+vent_L = 14; vent_gap = 7.5; vent_w = 2.4;  // slot length, gap along a row, slot width
+vent_rp = 5.8;                              // row pitch
+// A patch is [centre along the face, requested length, rows, z of the patch centre]; the length is
+// snapped to a whole number of slot periods so both ends of every row finish flush.
+top_patch = [0, 75, 13];                    // [y centre ignored, length along X, rows along Y]
 
 /* [Bottom] */
 foot_d = 7;                        // domed rubber feet (hemispheres)
@@ -60,36 +63,42 @@ screw_d  = 3; screw_in = 4; screw_z_in = 4.5;  // corner screws: inset from the 
 /* [Side A, -X: connectors at the rear end] */
 sa_usbc = [33.2, 10, 4, 19];       // [y, w, h, z] Pi USB-C (do not power from it)
 sa_hdmi = [[18.4, 7, 4, 19], [4.9, 7, 4, 19]];
-sa_region = [4, 68, 2, hgt - 10]; // staggered vents [centre y, length, rows, z of first row]
+sa_region = [2, 78, 2, hgt - 11];  // side A vents [centre y, length, rows, z of patch centre]
 
 /* [Rear, +Y: Pi microSD end] */
 // positions read off the labelled wiki photo (case upside down): z counts up from the bottom plate
 rr_led = [[-36.6, 2.5, 16], [-33.5, 2, 12]];   // SSD LED hole + a small neighbour [x, d, z]
 rr_tf  = [-21, 13, 3.2, 12];       // TF slot [x, w, h, z] (obround)
 rr_btn = [-4.1, 5.5, 35.7];        // power button hole [x, d, z]
-rr_region = [-7.5, 66, 2, 24.5];   // staggered vents [centre x, length, rows, z of row centre]
+rr_region = [-1.4, 78, 2, 23];    // rear vents [centre x, length, rows, z of patch centre]
 
 /* [Side B, +X: vents only] */
-sb_region = [0, 70, 2, hgt - 11];  // 2 staggered rows
+sb_region = [0, 78, 2, hgt - 11];   // side B vents
 
 /* [Colours] */
-base_color = "#2f3b4a";
-lid_color  = "#c8cdd2";
+// outside light, inside dark (the viewer darkens inner faces; OpenSCAD previews are single-colour)
+base_color = "#8aa4c0";
+lid_color  = "#e1e4e8";
 
 $fn = 40;
 
 module obround2d(l, w) hull() { for (s = [-1, 1]) translate([s*(l - w)/2, 0]) circle(d=w); }
 
-// 2D staggered slot pattern. u = along the slots, v = across the rows. Centred on the origin.
-module stagger2d(Wu, nrows, rp, L, g, w) {
-    p = L + g;
-    n = ceil(Wu/p) + 1;
-    for (r = [0:nrows-1], k = [-n:n]) {
-        c = k*p + (r % 2) * p/2;
-        lo = max(c - L/2, -Wu/2);  hi = min(c + L/2, Wu/2);
-        len = hi - lo;  v = (r - (nrows-1)/2) * rp;
-        if (len >= 1.5*w) translate([(lo+hi)/2, v]) obround2d(len, w);
-        else if (len >= 0.6*w) translate([(lo+hi)/2, v]) circle(d=w);
+// The one vent helper (2D). u = along the slots, v = across the rows, centred on the origin.
+// Even rows start with a full slot flush at the left edge; odd rows are shifted half a period so they
+// start with a short tail (a short slot or a dot). The length is snapped to n periods
+// (n*(L+gap)-gap) so the right-hand ends are flush too.
+module vent_grid(len, nrows) {
+    p = vent_L + vent_gap;
+    n = max(1, round((len + vent_gap) / p));
+    W = n*p - vent_gap;
+    for (r = [0:nrows-1]) {
+        v = (r - (nrows-1)/2) * vent_rp;  off = (r % 2) * p/2;
+        for (k = [0:n]) {
+            lo = max(k*p - off, 0);  hi = min(k*p - off + vent_L, W);  l = hi - lo;
+            if (l >= 1.5*vent_w) translate([(lo+hi)/2 - W/2, v]) obround2d(l, vent_w);
+            else if (l >= 0.6*vent_w) translate([(lo+hi)/2 - W/2, v]) circle(d=vent_w);
+        }
     }
 }
 
@@ -100,14 +109,9 @@ module wallx(side, u, v) {   // side wall at +/-X, u along Y
 module wally(side, u, v) {   // front/rear wall at -/+Y, u along X
     translate([u, side > 0 ? wy/2 + t : -wy/2 + 2*t, v]) rotate([90, 0, 0]) linear_extrude(3*t) children();
 }
-// vents on a wall from a [centre, length, rows, z-of-first-row] region (rows go down from z)
-module wall_pattern(reg, L, g, w, rp=5.5) {
-    translate([reg[0], 0]) translate([0, reg[3] - (reg[2]-1)*rp/2]) stagger2d(reg[1], reg[2], rp, L, g, w);
-}
-
 // ---- cutters ----
 module lid_cutters() {
-    translate([0, 0, hgt - 2*t]) linear_extrude(3*t) stagger2d(top_region_x, top_rows, top_row_pitch, top_L, top_gap, top_w);
+    translate([0, 0, hgt - 2*t]) linear_extrude(3*t) vent_grid(top_patch[1], top_patch[2]);
     for (p = [eth, usb3, usb2]) wally(-1, p[0], port_z) offset(r=0.8) square([p[1]-1.6, p[2]-1.6], center=true);
     wally(-1, usbc_in[0], port_z + 2) obround2d(usbc_in[1], usbc_in[2]);
     for (sx = [-1, 1], z = [screw_z_in, hgt - screw_in - 1]) wally(-1, sx*(wx/2 - screw_in), z) circle(d=screw_d);
@@ -123,14 +127,14 @@ module base_cutters() {
     // side A: connectors + vents
     wallx(-1, sa_usbc[0], sa_usbc[3]) obround2d_rot(sa_usbc[1], sa_usbc[2]);
     for (h = sa_hdmi) wallx(-1, h[0], h[3]) obround2d_rot(h[1], h[2]);
-    wallx(-1, sa_region[0], 0) wall_pattern([0, sa_region[1], sa_region[2], sa_region[3]], side_L, side_gap, side_w);
+    wallx(-1, sa_region[0], sa_region[3]) vent_grid(sa_region[1], sa_region[2]);
     // side B: vents
-    wallx(1, sb_region[0], 0) wall_pattern([0, sb_region[1], sb_region[2], sb_region[3]], side_L, side_gap, side_w);
+    wallx(1, sb_region[0], sb_region[3]) vent_grid(sb_region[1], sb_region[2]);
     // rear: LED, TF, button, vents
     for (l = rr_led) wally(1, l[0], l[2]) circle(d=l[1]);
     wally(1, rr_tf[0], rr_tf[3]) obround2d(rr_tf[1], rr_tf[2]);
     wally(1, rr_btn[0], rr_btn[2]) circle(d=rr_btn[1]);
-    wally(1, rr_region[0], 0) wall_pattern([0, rr_region[1], rr_region[2], rr_region[3]], side_L, side_gap, side_w);
+    wally(1, rr_region[0], rr_region[3]) vent_grid(rr_region[1], rr_region[2]);
 }
 // connector holes on side walls: u runs along Y, so a "w x h" obround is w along Y
 module obround2d_rot(w, h) obround2d(w, h);
