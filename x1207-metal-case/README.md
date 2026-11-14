@@ -21,4 +21,4 @@ Terminology used in the viewer: **rear** = the port face (Ethernet/USB, UPS USB-
 
 ## Sticker designs
 
-`tools/stickers.js` holds the sticker designs shown under "Stickers" in the viewer. Add an entry to `STICKERS` (face, centre, size in mm, and a canvas `draw` function; `qrcode()` is available for QR codes), then run `python3 tools/make_viewer.py`. To use the official Tamanu logo on the top-front sticker, save it as `tools/stickers/tamanu-logo.svg` (or `.png`); until then a placeholder wordmark is drawn.
+`tools/stickers.js` holds the sticker designs shown under "Stickers" in the viewer. Add an entry to `STICKERS` (face, centre, size in mm, and a canvas `draw` function; `qrcode()` is available for QR codes), then run `python3 tools/make_viewer.py`. The Tamanu logo on the top-front sticker is `tools/stickers/tamanu-logo.png`; replace that file (`.svg` or `.png`) to change it.
