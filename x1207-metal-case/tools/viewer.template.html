@@ -39,6 +39,9 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   <label><input type="checkbox" id="zh" checked><span class="sw" style="background:#e5484d"></span>Keep clear: vents, ports, button, LED, lid seam</label>
   <label><input type="checkbox" id="zs" checked><span class="sw" style="background:#f5a524"></span>Avoid: screws, feet, seams, edges</label>
   <label><input type="checkbox" id="zf" checked><span class="sw" style="background:#30a46c"></span>Suggested sticker areas</label>
+  <h2>Stickers</h2>
+  <label><input type="checkbox" id="sta" checked><b>All stickers</b></label>
+  <div id="stl"></div>
   <h2>Measure</h2>
   <div><button id="mm">Measure</button><button id="mc">Clear</button></div>
   <label><input type="checkbox" id="dims">Show overall dimensions</label>
@@ -48,6 +51,7 @@ button{font:inherit;padding:3px 8px;margin:2px 2px 0 0;border:1px solid var(--li
   </div>
 </div>
 <script>/*__THREE__*/</script>
+<script>/*__STICKERS__*/</script>
 <script>
 const DATA={base:"__BASE__",lid:"__LID__",button:"__BUTTON__"}, ZONES=__ZONES__;
 const el=document.getElementById('v');
@@ -133,6 +137,22 @@ function syncZones(){
 }
 for(const k in zbox)zbox[k].onchange=syncZones;
 $('za').onchange=e=>{for(const k in zbox)zbox[k].checked=e.target.checked;syncZones();};
+// ---- sticker designs (defined in tools/stickers.js): textured planes just above the zones; they ride with their part ----
+const stk=[], stBox=[];
+for(const s of STICKERS){
+  const PPM=24,cv=document.createElement('canvas');cv.width=Math.round(s.w*PPM);cv.height=Math.round(s.h*PPM);
+  const ctx=cv.getContext('2d');ctx.scale(PPM,PPM);
+  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=4;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(s.w,s.h),new THREE.MeshBasicMaterial({map:tex,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+  if(s.face==='top'){m.position.set(s.cx,s.cy,DIM.hgt+.45);lid.add(m);}
+  else{m.position.set(s.cx,s.cy,-.45);m.rotation.y=Math.PI;base.add(m);}   // seen from below the texture reads left to right
+  Promise.resolve(s.draw(ctx,s.w,s.h)).then(()=>{tex.needsUpdate=true;wake();});
+  const lb=document.createElement('label'),cb=document.createElement('input');cb.type='checkbox';cb.checked=true;
+  lb.append(cb,s.name);$('stl').appendChild(lb);stk.push(m);stBox.push(cb);
+  cb.onchange=()=>{m.visible=cb.checked;syncStickers();};
+}
+function syncStickers(){const n=stBox.filter(b=>b.checked).length;$('sta').checked=n===stBox.length;$('sta').indeterminate=n>0&&n<stBox.length;}
+$('sta').onchange=e=>{stBox.forEach((b,i)=>{b.checked=e.target.checked;stk[i].visible=b.checked;});syncStickers();};
 // ---- measurement: click two points; snaps to the nearest vertex of the clicked triangle ----
 const ray=new THREE.Raycaster(), meas=[], overlay=[]; let pending=null, measuring=false;
 const dot=()=>new THREE.Mesh(new THREE.SphereGeometry(0.9,12,8),new THREE.MeshBasicMaterial({color:0x2f6fed,depthTest:false}));

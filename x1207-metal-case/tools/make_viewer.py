@@ -20,7 +20,11 @@ scad = (root / 'case.scad').read_text()
 dim = {k: float(re.search(r'^%s\s*=\s*([\d.]+)' % k, scad, re.M).group(1)) for k in ('wx', 'wy', 'hgt', 't')}
 import json
 zones = {f'{k}_{o}': to_binary(root / 'renders' / 'zones' / f'{k}_{o}.stl') for k in ('hard', 'soft', 'free') for o in ('lid', 'base')}
-html = tpl.replace('__ZONES__', json.dumps(zones)).replace('__DIM__', json.dumps(dim)).replace('/*__THREE__*/', three).replace('__BUTTON__', to_binary(root / 'renders' / 'button.stl')).replace('__BASE__', to_binary(root / 'renders' / 'base.stl')) \
+import mimetypes
+logo = next((f for f in (root / 'tools' / 'stickers').glob('tamanu-logo.*')), None)
+logo_uri = ('data:%s;base64,' % mimetypes.guess_type(logo.name)[0] + base64.b64encode(logo.read_bytes()).decode()) if logo else ''
+stickers = (v / 'qrcode.js').read_text() + '\n' + (root / 'tools' / 'stickers.js').read_text().replace('__LOGO__', logo_uri)
+html = tpl.replace('/*__STICKERS__*/', stickers).replace('__ZONES__', json.dumps(zones)).replace('__DIM__', json.dumps(dim)).replace('/*__THREE__*/', three).replace('__BUTTON__', to_binary(root / 'renders' / 'button.stl')).replace('__BASE__', to_binary(root / 'renders' / 'base.stl')) \
           .replace('__LID__', to_binary(root / 'renders' / 'lid.stl'))
 (root / 'viewer.html').write_text(html)
 print('wrote viewer.html', len(html) // 1024, 'KiB')
